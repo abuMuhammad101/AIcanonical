@@ -37,6 +37,9 @@ export const M = {
   bubbleEase: "back.out(1.4)",
   bubbleMerge: 0.45,
   bubbleGap: 40,
+  scanMinDuration: 3.2, // radar always runs at least this long before the first device appears
+  deviceStagger: 0.9, // minimum gap between device arrivals
+  scanDoneHold: 0.4, // pause after the last arrival before Scan Again fades in
   scanEmptyAfter: 8,
 
   // Review

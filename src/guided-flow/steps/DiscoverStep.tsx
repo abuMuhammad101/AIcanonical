@@ -39,13 +39,35 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
   // ── Scan lifecycle ──────────────────────────────────────────────────────────
   const startScan = useCallback(() => {
     let found = 0;
+    let scanDone = false;
+    const startedAt = performance.now();
+    let nextRevealAt = startedAt + ms(M.scanMinDuration);
+    const reveals: number[] = [];
+    const finish = () => { if (scanDone && found && reveals.length === 0) setPhase("done"); };
+
     setItems([]);
     setPhase("scanning");
     announce(`Scanning for ${noun}s`);
-    cancelScan.current = scan(
-      item => { found++; setItems(prev => [...prev, item]); setPhase(ph => (ph === "scanning" ? "found" : ph)); },
-      () => { if (found) setPhase("done"); },
+
+    // Discoveries are revealed on a deliberate cadence: the radar always runs for
+    // at least scanMinDuration, and arrivals are at least deviceStagger apart.
+    const stopScan = scan(
+      item => {
+        found++;
+        const at = Math.max(performance.now(), nextRevealAt);
+        nextRevealAt = at + ms(M.deviceStagger);
+        const t = window.setTimeout(() => {
+          reveals.splice(reveals.indexOf(t), 1);
+          setItems(prev => [...prev, item]);
+          setPhase(ph => (ph === "scanning" ? "found" : ph));
+          finish();
+        }, at - performance.now());
+        reveals.push(t);
+      },
+      () => { scanDone = true; finish(); },
     );
+    cancelScan.current = () => { stopScan(); reveals.forEach(t => window.clearTimeout(t)); reveals.length = 0; };
+
     window.clearTimeout(emptyTimer.current);
     emptyTimer.current = window.setTimeout(() => {
       if (found) return;
@@ -120,7 +142,7 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
   useLayoutEffect(() => {
     if (phase === "empty") gsap.to(ringRefs.current, { opacity: 0, duration: 0.3, overwrite: true });
     if ((phase === "done" || phase === "empty") && scanAgainRef.current) {
-      gsap.fromTo(scanAgainRef.current, { opacity: 0 }, { opacity: 1, duration: M.itemIn, delay: phase === "done" ? 0.2 : 0 });
+      gsap.fromTo(scanAgainRef.current, { opacity: 0 }, { opacity: 1, duration: M.itemIn, delay: phase === "done" ? M.bubbleSplit + M.scanDoneHold : 0 });
     }
   }, [phase]);
 
