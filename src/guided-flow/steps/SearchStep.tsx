@@ -92,10 +92,10 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
 
   return (
     <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center"
-      style={{ top: "min(270px, 24vh)", width: 800, maxWidth: "calc(100vw - 32px)" }}>
+      style={{ top: "min(270px, 26.4vh)", width: 800, maxWidth: "calc(100vw - 32px)" }}>
 
-      <label className="gf-surface gf-search gf-pill w-full flex items-center gap-4" style={{ height: 100, padding: "0 36px" }}>
-        <span className="gf-muted shrink-0"><SearchIcon size={30} /></span>
+      <label className="gf-surface gf-search gf-pill w-full flex items-center" style={{ height: 104, padding: "0 35px", gap: 17 }}>
+        <span className="shrink-0"><SearchIcon size={36} strokeWidth={1.6} /></span>
         <input
           autoFocus
           type="text"
@@ -109,13 +109,13 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
           aria-controls="gf-search-results"
           aria-activedescendant={results[active] ? `gf-opt-${getKey(results[active])}` : undefined}
           disabled={selected !== null}
-          className="flex-1 min-w-0 bg-transparent text-[26px] outline-none border-none"
+          className="flex-1 min-w-0 bg-transparent text-[30px] font-medium outline-none border-none"
           style={{ color: "inherit", boxShadow: "none" }}
         />
       </label>
 
       <div ref={listRef} id="gf-search-results" role="listbox" aria-label={`Matching ${p.noun}`}
-        className="flex flex-col items-center w-full" style={{ gap: 18, marginTop: 34 }}>
+        className="flex flex-col items-center w-full" style={{ gap: 18, marginTop: 31 }}>
         {term && results.length === 0 && (
           <p className="gf-muted text-[20px] text-center" style={{ paddingTop: 12 }}>
             No {p.noun} match &lsquo;{term}&rsquo;
@@ -134,12 +134,13 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
               tabIndex={-1}
               onClick={() => pick(item)}
               onMouseEnter={() => selected === null && setActive(i)}
-              className={`gf-item gf-pill flex items-center gap-5 text-left ${isSel ? "gf-selected" : ""}`}
+              className={`gf-item gf-pill flex items-center text-left ${isSel ? "gf-selected" : ""}`}
               style={{
                 width: isSel ? PILL_W_SELECTED : PILL_W,
                 maxWidth: "100%",
-                height: isSel ? 108 : 100,
-                padding: "0 32px 0 18px",
+                height: isSel ? 110 : 104,
+                padding: "0 28px 0 19px",
+                gap: 17,
                 transform: "none",
                 opacity: selected && !isSel ? M.dimOpacity : 1,
                 transition: selected
@@ -149,25 +150,25 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
                 outlineOffset: -1,
               }}
             >
-              <span className="gf-avatar rounded-full flex items-center justify-center shrink-0 text-[20px] font-medium"
-                style={{ width: 64, height: 64 }}>
+              <span className="gf-avatar rounded-full flex items-center justify-center shrink-0 font-medium uppercase"
+                style={{ width: isSel ? 70 : 66, height: isSel ? 70 : 66, fontSize: isSel ? 21.4 : 19 }}>
                 {p.getInitials(item)}
               </span>
-              <span className="flex-1 min-w-0 flex flex-col gap-1">
-                <span className="text-[21px] font-semibold truncate"><Highlight text={p.getTitle(item)} query={isSel ? "" : term} /></span>
-                <span className="gf-muted text-[16px] flex items-center gap-2 min-w-0">
+              <span className="flex-1 min-w-0 flex flex-col" style={{ gap: 9 }}>
+                <span className="text-[22px] font-bold truncate"><Highlight text={p.getTitle(item)} query={isSel ? "" : term} /></span>
+                <span className="gf-muted text-[20px] flex items-center min-w-0" style={{ gap: 12 }}>
                   {p.getSubtitle(item).map((part, j) => (
-                    <span key={j} className="flex items-center gap-2 min-w-0">
-                      {j > 0 && <span aria-hidden="true" style={{ width: 1, height: 14, background: "currentColor", opacity: 0.6 }} />}
+                    <span key={j} className="flex items-center min-w-0" style={{ gap: 12 }}>
+                      {j > 0 && <span aria-hidden="true" style={{ width: 1.5, height: 16, background: "currentColor", opacity: 0.6 }} />}
                       <span className="truncate">{part}</span>
                     </span>
                   ))}
                 </span>
               </span>
               {status && (
-                <span className="flex items-center gap-2 shrink-0 text-[16px]">
+                <span className="flex items-center shrink-0 text-[17.5px] font-medium" style={{ gap: 4.4 }}>
                   <span className="rounded-full" aria-hidden="true"
-                    style={{ width: 6, height: 6, background: `var(--gf-status-${status.tone})` }} />
+                    style={{ width: 6.5, height: 6.5, background: `var(--gf-status-${status.tone})` }} />
                   {status.label}
                 </span>
               )}

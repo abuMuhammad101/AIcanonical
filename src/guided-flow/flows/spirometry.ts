@@ -112,7 +112,7 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
         scan: mockScan,
         getKey: d => d.serial,
         getLabel: d => d.serial,
-        icon: h(SpirometerIcon, { size: 48 }),
+        icon: h(SpirometerIcon, { size: 70 }),
         noun: "device",
         toContext: device => ({ device }),
       }),

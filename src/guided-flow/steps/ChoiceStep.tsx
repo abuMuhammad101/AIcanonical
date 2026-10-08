@@ -50,7 +50,7 @@ export default function ChoiceStep<C extends object>(p: ChoiceStepProps<C>) {
   }, [setCommandHandler, options]);
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: 120, paddingBottom: 160 }}>
+    <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: 120, paddingBottom: 120 }}>
       <div ref={rowRef} role="radiogroup" className="flex flex-wrap justify-center" style={{ gap: 36 }}>
         {options.map(o => {
           const isSel = selected === o.id;
@@ -60,18 +60,18 @@ export default function ChoiceStep<C extends object>(p: ChoiceStepProps<C>) {
               role="radio"
               aria-checked={isSel}
               onClick={() => pick(o)}
-              className={`gf-surface gf-card relative flex flex-col items-start text-left ${isSel ? "gf-selected" : "hover:scale-105 active:scale-105"}`}
+              className={`gf-surface gf-choice gf-card relative flex flex-col items-start text-left ${isSel ? "gf-selected" : "hover:scale-105 active:scale-105"}`}
               style={{
-                width: 400, minHeight: 212, padding: "34px 64px 30px 34px", gap: 14,
+                width: 397, minHeight: 212, padding: "26px 35px", gap: 12,
                 opacity: selected && !isSel ? M.dimOpacity : 1,
                 transition: selected
                   ? `transform ${M.select}s ease, background-color ${M.select}s ease, opacity ${M.select}s ease`
                   : `transform ${M.select}s ease, background-color ${M.select}s ease`,
               }}
             >
-              <span className="text-[23px] font-semibold leading-tight">{o.title}</span>
-              {o.description && <span className="gf-muted text-[18px] leading-snug">{o.description}</span>}
-              <span className="absolute" style={{ top: 26, right: 26 }}><ArrowUpRightIcon size={26} /></span>
+              <span className="text-[24px] font-bold" style={{ lineHeight: "34px", paddingRight: 36 }}>{o.title}</span>
+              {o.description && <span className="gf-muted text-[20px]" style={{ lineHeight: "28px" }}>{o.description}</span>}
+              <span className="absolute" style={{ top: 18, right: 20 }}><ArrowUpRightIcon size={34} strokeWidth={1.4} /></span>
             </button>
           );
         })}

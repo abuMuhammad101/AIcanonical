@@ -328,7 +328,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       {/* Scrim — blurs the host screen; taps do nothing */}
       <div ref={scrimRef} className="gf-scrim absolute inset-0" style={{ opacity: 0 }} aria-hidden="true" />
       <div className="absolute inset-0 pointer-events-none transition-opacity duration-200"
-        style={{ background: "var(--gf-picker-scrim)", opacity: focusMode ? 1 : 0 }} aria-hidden="true" />
+        style={{ background: "var(--gf-picker-scrim)", backdropFilter: "blur(var(--gf-picker-blur))", WebkitBackdropFilter: "blur(var(--gf-picker-blur))", opacity: focusMode ? 1 : 0 }} aria-hidden="true" />
 
       {/* Announcements */}
       <p className="sr-only" aria-live="polite">{`Step ${index + 1} of ${steps.length}, ${step.prompt}`}</p>
@@ -349,13 +349,13 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
         <div style={{ opacity: focusMode ? 0.4 : 1, gap: 17 }} className="flex items-center transition-opacity duration-200">
           {hasProgress && (
             <button onClick={reset} aria-label="Reset guide"
-              className="gf-surface rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
-              <ResetIcon size={26} />
+              className="gf-surface gf-dock rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
+              <ResetIcon size={22} strokeWidth={1.7} />
             </button>
           )}
           <button onClick={requestClose} aria-label="Close guide"
-            className="gf-surface rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
-            <CloseIcon size={26} />
+            className="gf-surface gf-dock rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
+            <CloseIcon size={22} strokeWidth={2} />
           </button>
           {voice && (
             <MicButton listening={speak.listening} level={speak.level} shakeKey={speak.shakeKey}

@@ -203,7 +203,7 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
   const scanning = phase === "scanning" || phase === "merging";
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingTop: 120, paddingBottom: 160 }}>
+    <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingTop: 124, paddingBottom: 160 }}>
       <div className="relative w-full" style={{ height: 260 }}>
         {/* Radar rings (behind the first bubble) */}
         {!rm && Array.from({ length: M.radarRings }, (_, i) => (
@@ -227,17 +227,18 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
               disabled={!item || phase === "merging" || (selected !== null && !isSel)}
               onClick={() => pick(i)}
               aria-label={item ? `Select ${noun} ${p.getLabel(item)}` : `Scanning for ${noun}s`}
-              className={`gf-surface absolute rounded-full flex flex-col items-center justify-center gap-3 ${isSel ? "gf-selected" : ""}`}
+              className={`gf-surface gf-bubble absolute rounded-full flex flex-col items-center justify-center ${isSel ? "gf-selected" : ""}`}
               style={{
                 left: "50%", top: "50%", width: BUBBLE, height: BUBBLE, marginLeft: -BUBBLE / 2, marginTop: -BUBBLE / 2,
                 zIndex: i === 0 ? 2 : 1,
                 cursor: item ? "pointer" : "default",
+                gap: 17,
               }}
             >
-              <span className="flex items-center justify-center" style={{ height: 56 }}>{p.icon}</span>
+              <span className="flex items-center justify-center" style={{ height: 70 }}>{p.icon}</span>
               {item && (
                 <span ref={el => { labelRefs.current[i] = el; }}
-                  className={`text-[15px] tracking-wide ${isSel ? "" : "gf-muted"}`} style={{ opacity: 0 }}>
+                  className={`text-[18px] ${isSel ? "" : "gf-muted"}`} style={{ opacity: 0, lineHeight: "28px" }}>
                   {p.getLabel(item)}
                 </span>
               )}
@@ -246,13 +247,14 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
         })}
       </div>
 
-      <div className="flex flex-col items-center" style={{ height: 96, marginTop: 8 }}>
+      {/* Below the row at Figma's offset (Scan Again centre 154px under the bubbles' centre) */}
+      <div className="absolute left-1/2 flex flex-col items-center" style={{ top: "calc(50% - 18px + 130px)", translate: "-50% 0" }}>
         {scanning && rm && <p className="gf-muted text-[18px]" role="status">Scanning…</p>}
         {phase === "empty" && <p className="text-[19px] mb-1">No {noun}s found</p>}
         {(phase === "done" || phase === "empty" || (phase === "merging" && items.length > 0)) && selected === null && (
           <button ref={scanAgainRef} onClick={scanAgain}
-            className="gf-muted flex items-center gap-2 text-[19px] px-4 rounded-full" style={{ minHeight: 48, opacity: 0 }}>
-            <RefreshIcon size={22} />
+            className="flex items-center gap-2 text-[26px] font-semibold px-4 rounded-full" style={{ minHeight: 48, opacity: 0, letterSpacing: "-0.78px" }}>
+            <RefreshIcon size={28} />
             Scan Again
           </button>
         )}

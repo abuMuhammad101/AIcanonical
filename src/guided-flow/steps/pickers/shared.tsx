@@ -20,7 +20,7 @@ export interface PickerProps<S extends PickerSpec> {
 
 export function PickerPanel({ flipId, width = 520, children }: { flipId: string; width?: number; children: ReactNode }) {
   return (
-    <div data-flip-id={flipId} className="gf-surface gf-card flex flex-col" style={{ width, padding: 24, gap: 14 }}>
+    <div data-flip-id={flipId} className="gf-surface gf-tile gf-card flex flex-col" style={{ width, padding: 24, gap: 14 }}>
       {children}
     </div>
   );
@@ -29,7 +29,7 @@ export function PickerPanel({ flipId, width = 520, children }: { flipId: string;
 export function ConfirmButton({ valid, onClick }: { valid: boolean; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} aria-label="Confirm"
-      className={`gf-surface rounded-full flex items-center justify-center shrink-0 ${valid ? "gf-selected" : ""}`}
+      className={`gf-surface gf-dock rounded-full flex items-center justify-center shrink-0 ${valid ? "gf-selected" : ""}`}
       style={{ width: 60, height: 60, transform: "none" }}>
       <CheckIcon size={26} />
     </button>

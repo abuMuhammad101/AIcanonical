@@ -30,8 +30,9 @@ const TILE_W = 220;
 const TILE_H = 146;
 const GAP = 20;
 // Proceed button and its rings at their largest (Figma state B)
-// Figma start-button states (A / Variant3 / B), scaled to 0.8 of the frame.
-const SCALE = 0.8;
+// Figma start-button states (A / Variant3 / B). The light frames place it at
+// 92.73px (11784:15975), i.e. the 120px component at 0.7727.
+const SCALE = 92.727 / 120;
 const PROCEED = 120 * SCALE; // A: button at rest
 const PROCEED_MID = 130 * SCALE; // Variant3
 const PROCEED_PEAK = 140 * SCALE; // B
@@ -185,7 +186,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
   const field = editing !== null ? fields[editing] : null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: 120, paddingBottom: 160 }}>
+    <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: 120, paddingBottom: 120 }}>
       {/* Surface keeps the grid's footprint so pickers grow from where the tiles were */}
       <div ref={surfaceRef} className="flex justify-center items-start" style={{ minHeight: TILE_H * 2 + GAP }}>
         {field === null ? (
@@ -198,16 +199,16 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
                   data-flip-id={`slot-${i}`}
                   onClick={() => open(i)}
                   aria-label={`${f.label}: ${v || "not set"}. Edit`}
-                  className="gf-surface gf-card relative flex flex-col justify-center items-start text-left"
-                  style={{ width: TILE_W, height: TILE_H, padding: "18px 22px 18px 24px", gap: 6 }}
+                  className="gf-surface gf-tile gf-card relative flex flex-col justify-center items-start text-left"
+                  style={{ width: TILE_W, height: TILE_H, padding: "12px 28px", gap: 15 }}
                 >
-                  <span className="absolute gf-muted" style={{ top: 16, right: 16 }}><PencilIcon size={18} /></span>
+                  <span className="absolute" style={{ top: 12, right: 12 }}><PencilIcon size={20} strokeWidth={1.5} /></span>
                   {v ? (
-                    <span className="text-[23px] font-bold leading-tight line-clamp-2 break-words">{v}</span>
+                    <span className="text-[24px] font-bold leading-tight line-clamp-2 break-words">{v}</span>
                   ) : (
-                    <span className="text-[23px] font-bold leading-tight gf-muted">Add</span>
+                    <span className="text-[24px] font-bold leading-tight gf-muted">Add</span>
                   )}
-                  <span className="gf-muted text-[16px]">{f.label}</span>
+                  <span className="gf-muted text-[18px]" style={{ lineHeight: "28px" }}>{f.label}</span>
                 </button>
               );
             })}
@@ -219,7 +220,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
 
       {/* Proceed */}
       <div className="absolute flex items-center justify-center"
-        style={{ right: 70, top: "50%", width: PROCEED, height: PROCEED, marginTop: -PROCEED / 2 + (120 - 160) / 2,
+        style={{ right: 55 + (170 - PROCEED) / 2, top: "50%", width: PROCEED, height: PROCEED, marginTop: -PROCEED / 2,
           opacity: editing !== null ? 0.4 : 1, transition: "opacity 0.2s ease" }}>
         {ready && editing === null && (
           <>
@@ -234,7 +235,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
             onClick={proceed}
             disabled={!ready || editing !== null}
             aria-label={ready ? p.proceedLabel : `${p.proceedLabel} — add ${missing.map(f => f.label).join(", ")} first`}
-            className={`relative rounded-full flex items-center justify-center ${ready && editing === null ? "gf-proceed" : "gf-surface"}`}
+            className={`relative rounded-full flex items-center justify-center ${ready && editing === null ? "gf-proceed" : "gf-surface gf-dock"}`}
             style={{ width: PROCEED, height: PROCEED }}
           >
             <ArrowUpRightIcon size={80 * SCALE} strokeWidth={0.9} />

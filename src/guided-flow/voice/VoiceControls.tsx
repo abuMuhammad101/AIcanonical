@@ -112,7 +112,7 @@ export function MicButton({ listening, level, shakeKey, label, onToggle, reduced
 
   return (
     <button ref={btnRef} type="button" onClick={onClick} aria-label={label} aria-pressed={listening}
-      className="gf-surface relative rounded-full shrink-0 overflow-hidden"
+      className="gf-surface gf-dock relative rounded-full shrink-0 overflow-hidden"
       style={{ width: SIZE, height: SIZE }}>
       <img ref={micRef} src={micIcon} alt="" width={32} height={32}
         className="absolute pointer-events-none" style={{ left: "50%", top: "50%", translate: "-50% -50%" }} />

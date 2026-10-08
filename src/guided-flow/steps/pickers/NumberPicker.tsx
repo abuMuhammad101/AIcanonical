@@ -31,7 +31,7 @@ export default function NumberPicker({ spec, values, onConfirm, flipId }: Picker
     <PickerPanel flipId={flipId}>
       <div className="flex items-center gap-3">
         <button type="button" onClick={() => step(-1)} aria-label={`Decrease ${spec.label.toLowerCase()}`}
-          className="gf-surface rounded-full shrink-0 flex items-center justify-center text-[28px] font-light" style={{ width: 56, height: 56 }}>−</button>
+          className="gf-surface gf-dock rounded-full shrink-0 flex items-center justify-center text-[28px] font-light" style={{ width: 56, height: 56 }}>−</button>
         <div className="flex-1 flex items-baseline justify-center gap-2">
           <input
             autoFocus
@@ -50,7 +50,7 @@ export default function NumberPicker({ spec, values, onConfirm, flipId }: Picker
           <span className="gf-muted text-[22px]">{spec.unit}</span>
         </div>
         <button type="button" onClick={() => step(1)} aria-label={`Increase ${spec.label.toLowerCase()}`}
-          className="gf-surface rounded-full shrink-0 flex items-center justify-center text-[28px] font-light" style={{ width: 56, height: 56 }}>+</button>
+          className="gf-surface gf-dock rounded-full shrink-0 flex items-center justify-center text-[28px] font-light" style={{ width: 56, height: 56 }}>+</button>
         <ConfirmButton valid={valid} onClick={confirm} />
       </div>
       <PickerError message={error} />
