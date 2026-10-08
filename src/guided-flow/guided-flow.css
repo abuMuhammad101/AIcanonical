@@ -85,7 +85,6 @@
   --gf-ring-outer-glow: 0 20px 83px rgba(255, 255, 255, 0.05);
 
   --gf-radar-ring: rgba(255, 255, 255, 0.55);
-  --gf-mic-ring: rgba(255, 255, 255, 0.35);
   --gf-status-neutral: rgba(255, 255, 255, 0.6);
 
   --gf-picker-scrim: rgba(0, 0, 0, 0.3);
@@ -149,7 +148,6 @@
   --gf-ring-outer-glow: none;
 
   --gf-radar-ring: rgba(67, 67, 67, 0.35);
-  --gf-mic-ring: rgba(67, 67, 67, 0.3);
   --gf-status-neutral: #8b8c8e;
 
   --gf-picker-scrim: rgba(163, 163, 163, 0.97);
@@ -302,15 +300,6 @@ button.gf-item.gf-selected:hover {
 .gf-proceed-ring-outer {
   background: var(--gf-ring-outer-bg);
   box-shadow: var(--gf-ring-outer-glow);
-}
-
-/* ── Mic ────────────────────────────────────────────────────────────────── */
-.gf-mic-ring {
-  position: absolute;
-  inset: -2px;
-  border-radius: 9999px;
-  border: 2px solid var(--gf-mic-ring);
-  pointer-events: none;
 }
 
 /* ── A/B theme switcher — a test control, deliberately not themed ─────── */

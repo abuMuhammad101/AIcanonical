@@ -2114,7 +2114,6 @@ export default function App() {
   const [guideStep, setGuideStep] = useState<GuideStepState<SpirometryContext> | null>(null);
   const [askVoice, setAskVoice] = useState<string | null>(null);
   const guideRef = useRef<GuidedFlowHandle>(null);
-  const askFabRef = useRef<HTMLButtonElement>(null);
 
   function closeAsk() {
     setAskOpen(false);
@@ -2134,7 +2133,6 @@ export default function App() {
     setAskVoice(transcript);
     setAskOpen(true);
   }, []);
-  const askFabRect = useCallback(() => askFabRef.current?.getBoundingClientRect() ?? null, []);
 
   const guideChatLabel = guideStep
     ? `${guideStep.stepLabel}${guideStep.context.patient ? ` · ${guideStep.context.patient.name}` : ""}`
@@ -2317,7 +2315,6 @@ export default function App() {
       <div className="fixed transition-opacity duration-200" style={{ right: 36, bottom: 24, width: 155, height: 66, zIndex: guideOpen ? 70 : 40, opacity: guideOpen && askOpen ? 0.4 : 1 }}>
         <div aria-hidden="true" className="absolute" style={{ left: 20, top: 31, width: 114, height: 35, borderRadius: 22, filter: "blur(11.7px)", backgroundImage: "linear-gradient(162.9deg, #007A8B 0%, #3AAF4D 37%, #A8CB38 85.6%)" }} />
         <button
-          ref={askFabRef}
           className="absolute flex items-center hover:opacity-90 transition-opacity"
           style={{ left: 5, bottom: 2, width: 146, height: 64, borderRadius: 50, backgroundImage: "linear-gradient(156.3deg, #007A8B 0%, #3AAF4D 37%, #A8CB38 85.6%)", pointerEvents: askOpen ? "none" : undefined }}
           aria-disabled={askOpen || undefined}
@@ -2339,7 +2336,7 @@ export default function App() {
           onStart={handleGuideStart}
           paused={askOpen}
           onStepChange={setGuideStep}
-          voice={{ scriptFor: scriptedTranscript, onSend: handleVoiceSend, target: askFabRect }}
+          voice={{ scriptFor: scriptedTranscript, onSend: handleVoiceSend }}
         />
       )}
 

@@ -48,15 +48,17 @@ export const M = {
   proceedPulse: 1.2, // one way, A → B (and back, yoyo)
   proceedPulseHold: 0.15, // rest at each end of the pulse
 
-  // Voice
-  micSlide: 0.25,
-  micSlideEase: "power2.inOut",
-  micSlideDistance: 60, // tick sits this far right of the mic inside the clipped circle
-  voiceScriptDelay: 0.7, // "Listening…" before the scripted transcript starts typing
-  voiceTypeChar: 0.03,
-  voiceCancelWindow: 2, // tapping ✓ with nothing heard inside this window cancels instead
-  voiceMissedHold: 2,
-  voiceFly: 0.4,
+  // Voice — the Speak button morphs circle ↔ pill
+  micPillWidth: 140,
+  micExpand: 0.25,
+  micExpandEase: "power2.out",
+  micCollapse: 0.3,
+  micCollapseEase: "power2.inOut",
+  micFadeReduced: 0.15,
+  micShake: 0.3,
+  waveScriptStep: 0.12, // scripted waveform changes level every 120ms
+  voiceScriptDelay: 0.7, // silence before the scripted transcript/pattern starts
+  voiceTypeChar: 0.03, // scripted transcript pace (also sets the scripted pattern length)
 
   // Theme crossfade
   themeFade: 0.2,

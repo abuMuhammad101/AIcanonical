@@ -7,7 +7,7 @@ import { M, ms } from "./motion";
 import type { FlowCommand, FlowConfig, StepApi } from "./flows/types";
 import { CloseIcon, ResetIcon } from "./steps/icons";
 import ThemeSwitcher, { switcherEnabled, useGuideTheme } from "./ThemeSwitcher";
-import { MicButton, TranscriptBubble } from "./voice/VoiceControls";
+import { MicButton } from "./voice/VoiceControls";
 import { useVoice } from "./voice/useVoice";
 
 gsap.registerPlugin(useGSAP, Flip);
@@ -31,8 +31,6 @@ export interface GuideVoice {
   scriptFor: (stepId: string) => string;
   /** The transcript was sent; the host opens its assistant chat. */
   onSend: (transcript: string, stepId: string) => void;
-  /** Where the transcript bubble flies to on send. */
-  target?: () => DOMRect | null;
 }
 
 interface Props<C extends object> {
@@ -73,6 +71,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const [focusMode, setFocusMode] = useState(false);
   const [showExit, setShowExit] = useState(false);
   const [liveMsg, setLiveMsg] = useState("");
+  const [voiceMsg, setVoiceMsg] = useState("");
 
   const ctxRef = useRef(context);
   const indexRef = useRef(index);
@@ -89,7 +88,6 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const dockRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
-  const bubbleRef = useRef<HTMLDivElement>(null);
 
   const rm = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
 
@@ -227,10 +225,8 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const voiceRef = useRef(voice);
   voiceRef.current = voice;
   const voiceScript = useCallback(() => voiceRef.current?.scriptFor(stepIdRef.current) ?? "", []);
-  const voiceTarget = useCallback(() => voiceRef.current?.target?.() ?? null, []);
   const voiceSend = useCallback((t: string) => voiceRef.current?.onSend(t, stepIdRef.current), []);
-  const speak = useVoice({ reducedMotion: rm, bubbleRef, script: voiceScript, target: voiceTarget, onSend: voiceSend });
-  const listening = speak.state === "listening";
+  const speak = useVoice({ script: voiceScript, onSend: voiceSend, announce: setVoiceMsg });
   const cancelVoice = speak.cancel;
 
   // ── Paused under host UI ────────────────────────────────────────────────────
@@ -303,7 +299,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       if (e.key === "Escape") {
         e.preventDefault();
         if (showExit) { setShowExit(false); focusFirst(); return; }
-        if (speak.state === "listening" || speak.state === "missed") { cancelVoice(); return; }
+        if (speak.listening) { cancelVoice(); return; }
         if (escapeRef.current) { escapeRef.current(); return; }
         requestClose();
         return;
@@ -337,13 +333,11 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       {/* Announcements */}
       <p className="sr-only" aria-live="polite">{`Step ${index + 1} of ${steps.length}, ${step.prompt}`}</p>
       <p className="sr-only" aria-live="polite">{liveMsg}</p>
+      <p className="sr-only" aria-live="polite">{voiceMsg}</p>
 
       {/* Stage — the current step renders and swaps in place */}
       <div ref={stageRef} tabIndex={-1} className="absolute inset-0 outline-none" style={{ opacity: 0 }}>
-        {/* While listening the step dims and ignores taps */}
-        <div key={`${step.id}:${resetKey}`} className="absolute inset-0 transition-opacity duration-200"
-          style={{ opacity: listening ? 0.5 : 1, pointerEvents: listening ? "none" : undefined }}
-          aria-hidden={listening || undefined}>
+        <div key={`${step.id}:${resetKey}`} className="absolute inset-0">
           {step.render(api)}
         </div>
       </div>
@@ -352,7 +346,6 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       <div ref={dockRef}
         className="absolute left-1/2 -translate-x-1/2 flex items-center transition-opacity duration-200"
         style={{ bottom: 52, opacity: 0 }}>
-        {voice && <TranscriptBubble ref={bubbleRef} state={speak.state} text={speak.text} />}
         <div style={{ opacity: focusMode ? 0.4 : 1, gap: 17 }} className="flex items-center transition-opacity duration-200">
           {hasProgress && (
             <button onClick={reset} aria-label="Reset guide"
@@ -364,7 +357,10 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
             className="gf-surface rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
             <CloseIcon size={26} />
           </button>
-          {voice && <MicButton state={speak.state} label={speak.label} onClick={speak.toggle} reducedMotion={rm} />}
+          {voice && (
+            <MicButton listening={speak.listening} level={speak.level} shakeKey={speak.shakeKey}
+              label={speak.label} onToggle={speak.toggle} reducedMotion={rm} />
+          )}
         </div>
       </div>
 
