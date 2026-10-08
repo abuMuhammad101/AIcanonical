@@ -1,12 +1,11 @@
 /* ── Guided Flow: tokens + glass classes ───────────────────────────────────
    Every visual value of the overlay lives here. Re-skin by overriding --gf-*.
-   --gf-scrim, --gf-glass-bg and --gf-text-muted are tuned darker than the
-   first spec so white glass text stays ≥ 4.5:1 (muted ≈ 4.8:1) over a
-   white host screen. */
+   Over a white host screen, white glass text is ≈ 4:1 and muted ≈ 3.3:1 with
+   these values: AA for large/bold text only. Darken --gf-scrim to raise it. */
 
 .gf-root {
-  --gf-scrim: rgba(24, 24, 24, 0.78);
-  --gf-host-blur: 22px;
+  --gf-scrim: rgba(32, 32, 32, 0.66);
+  --gf-host-blur: 16px;
   --gf-glass-bg: rgba(255, 255, 255, 0.14);
   --gf-glass-bg-hover: rgba(255, 255, 255, 0.24);
   --gf-glass-border: rgba(255, 255, 255, 0.55);
@@ -19,7 +18,13 @@
   --gf-selected-pressed: #e4e4e4;
   --gf-radius-card: 22px;
   --gf-radius-pill: 9999px;
-  --gf-glow: 0 0 0 10px rgba(255, 255, 255, 0.18), 0 0 36px rgba(255, 255, 255, 0.55);
+  --gf-proceed-icon: #434343;
+  --gf-proceed-border: rgba(255, 255, 255, 0.7);
+  /* Proceed rings: white discs with a soft white glow below (Figma "glow" layers) */
+  --gf-ring-inner-bg: rgba(255, 255, 255, 0.2);
+  --gf-ring-inner-glow: 0 17px 71px rgba(255, 255, 255, 0.1);
+  --gf-ring-outer-bg: rgba(255, 255, 255, 0.1);
+  --gf-ring-outer-glow: 0 20px 83px rgba(255, 255, 255, 0.05);
   --gf-font: system-ui, -apple-system, sans-serif;
 
   /* Extra darkening layers over the scrim */
@@ -116,15 +121,31 @@ button.gf-glass.gf-selected:hover {
 /* Proceed button */
 .gf-proceed {
   background: var(--gf-selected-bg);
-  color: var(--gf-selected-text);
+  color: var(--gf-proceed-icon);
+  border: 1.75px solid var(--gf-proceed-border);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
   transition: transform 0.12s ease, background-color 0.12s ease, opacity 0.15s ease;
 }
 .gf-proceed:active:not(:disabled) {
   transform: scale(0.92);
   background: var(--gf-selected-pressed);
 }
-.gf-proceed-glow {
-  box-shadow: var(--gf-glow);
+.gf-proceed-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+.gf-proceed-ring-inner {
+  background: var(--gf-ring-inner-bg);
+  box-shadow: var(--gf-ring-inner-glow);
+}
+.gf-proceed-ring-outer {
+  background: var(--gf-ring-outer-bg);
+  box-shadow: var(--gf-ring-outer-glow);
 }
 
 .gf-no-scroll {

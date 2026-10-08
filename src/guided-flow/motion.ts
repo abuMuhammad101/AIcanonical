@@ -45,8 +45,8 @@ export const M = {
   // Review
   flip: 0.45,
   flipEase: "power2.inOut",
-  glowPulse: 2,
-  glowScale: 1.06,
+  proceedPulse: 1.2, // one way, A → B (and back, yoyo)
+  proceedPulseHold: 0.15, // rest at each end of the pulse
 
   // Dialog
   dialog: 0.2,
