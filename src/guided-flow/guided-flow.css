@@ -79,6 +79,7 @@
   --gf-proceed-bg-pressed: #e4e4e4;
   --gf-proceed-icon: #434343;
   --gf-proceed-border: rgba(255, 255, 255, 0.7);
+  --gf-proceed-border-width: 1.75px;
   --gf-proceed-shadow: none;
   --gf-ring-inner-bg: rgba(255, 255, 255, 0.2);
   --gf-ring-inner-glow: 0 17px 71px rgba(255, 255, 255, 0.1);
@@ -103,13 +104,12 @@
   --gf-on-scrim-text: #434343;
   --gf-on-scrim-muted: #58595c;
 
-  /* Frosted charcoal: a lit top-left fading to a deeper base, a bright top
-     edge, an inner shade at the bottom and a soft lifted shadow. The lightest
-     corner stays as dark as the old flat fill, so white text keeps ≈ 4:1. */
-  --gf-surface-bg: linear-gradient(150deg, rgba(84, 84, 84, 0.72) 0%, rgba(58, 58, 58, 0.76) 55%, rgba(36, 36, 36, 0.8) 100%);
-  --gf-surface-bg-hover: linear-gradient(150deg, rgba(94, 94, 94, 0.74) 0%, rgba(64, 64, 64, 0.78) 55%, rgba(44, 44, 44, 0.82) 100%);
-  --gf-surface-border-width: 1px;
-  --gf-surface-border-color: rgba(255, 255, 255, 0.45);
+  /* Every control is frosted like the search field: a translucent charcoal
+     gradient with a bright 3px white rim. */
+  --gf-surface-bg: linear-gradient(150deg, rgba(84, 84, 84, 0.66) 0%, rgba(40, 40, 40, 0.76) 100%);
+  --gf-surface-bg-hover: linear-gradient(150deg, rgba(96, 96, 96, 0.7) 0%, rgba(48, 48, 48, 0.8) 100%);
+  --gf-surface-border-width: 3px;
+  --gf-surface-border-color: rgba(255, 255, 255, 0.8);
   --gf-surface-blur: 28px;
   --gf-surface-saturate: 180%;
   --gf-surface-shadow:
@@ -120,10 +120,10 @@
   --gf-surface-text: #fff;
   --gf-surface-text-muted: rgba(255, 255, 255, 0.82);
 
-  --gf-search-bg: linear-gradient(150deg, rgba(84, 84, 84, 0.66) 0%, rgba(40, 40, 40, 0.76) 100%);
-  --gf-search-border-width: 3px;
-  --gf-search-border-color: rgba(255, 255, 255, 0.8);
-  --gf-search-blur: 28px;
+  --gf-search-bg: var(--gf-surface-bg);
+  --gf-search-border-width: var(--gf-surface-border-width);
+  --gf-search-border-color: var(--gf-surface-border-color);
+  --gf-search-blur: var(--gf-surface-blur);
 
   --gf-item-bg: rgba(204, 204, 204, 0.8);
   --gf-item-bg-hover: rgba(192, 192, 192, 0.85);
@@ -140,16 +140,17 @@
   --gf-match-text: #434343;
 
   --gf-selected-bg: linear-gradient(150deg, rgba(70, 70, 70, 0.86) 0%, rgba(28, 28, 28, 0.9) 100%);
-  --gf-selected-border-color: rgba(255, 255, 255, 0.6);
+  --gf-selected-border-color: rgba(255, 255, 255, 0.8);
   --gf-selected-text: #fff;
   --gf-selected-text-muted: rgba(255, 255, 255, 0.82);
   --gf-selected-avatar-bg: #ececec;
   --gf-selected-avatar-text: #434343;
 
-  --gf-proceed-bg: linear-gradient(150deg, rgba(84, 84, 84, 0.85) 0%, rgba(32, 32, 32, 0.92) 100%);
+  --gf-proceed-bg: var(--gf-surface-bg);
   --gf-proceed-bg-pressed: linear-gradient(150deg, rgba(62, 62, 62, 0.9) 0%, rgba(22, 22, 22, 0.95) 100%);
   --gf-proceed-icon: #fff;
-  --gf-proceed-border: rgba(255, 255, 255, 0.6);
+  --gf-proceed-border: var(--gf-surface-border-color);
+  --gf-proceed-border-width: var(--gf-surface-border-width);
   --gf-proceed-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38), 0 12px 28px -8px rgba(0, 0, 0, 0.3);
   /* On white the rings are charcoal veils, mirroring the dark theme's white ones */
   --gf-ring-inner-bg: rgba(67, 67, 67, 0.22);
@@ -285,7 +286,7 @@ button.gf-item.gf-selected:hover {
 .gf-proceed {
   background: var(--gf-proceed-bg);
   color: var(--gf-proceed-icon);
-  border: 1.75px solid var(--gf-proceed-border);
+  border: var(--gf-proceed-border-width) solid var(--gf-proceed-border);
   box-shadow: var(--gf-proceed-shadow);
   -webkit-backdrop-filter: blur(24px) saturate(var(--gf-surface-saturate));
   backdrop-filter: blur(24px) saturate(var(--gf-surface-saturate));
