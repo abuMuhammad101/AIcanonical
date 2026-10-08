@@ -1,156 +1,145 @@
-/* ── GuidedFlow base styles ─────────────────────────────────────── */
+/* ── Guided Flow: tokens + glass classes ───────────────────────────────────
+   Every visual value of the overlay lives here. Re-skin by overriding --gf-*.
+   --gf-scrim, --gf-glass-bg and --gf-text-muted are tuned darker than the
+   first spec so white glass text stays ≥ 4.5:1 (muted ≈ 4.8:1) over a
+   white host screen. */
 
-/* Glass capsule */
-.gf-capsule {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 9999px;
-  box-shadow: 0 8px 32px rgba(0, 122, 139, 0.12), 0 2px 8px rgba(0,0,0,0.06);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  backdrop-filter: blur(14px) saturate(1.2);
-  transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
-}
+.gf-root {
+  --gf-scrim: rgba(24, 24, 24, 0.78);
+  --gf-host-blur: 22px;
+  --gf-glass-bg: rgba(255, 255, 255, 0.14);
+  --gf-glass-bg-hover: rgba(255, 255, 255, 0.24);
+  --gf-glass-border: rgba(255, 255, 255, 0.55);
+  --gf-glass-blur: 16px;
+  --gf-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0 12px rgba(255, 255, 255, 0.15);
+  --gf-text: #fff;
+  --gf-text-muted: rgba(255, 255, 255, 0.85);
+  --gf-selected-bg: #fff;
+  --gf-selected-text: #1a1a1a;
+  --gf-selected-pressed: #e4e4e4;
+  --gf-radius-card: 22px;
+  --gf-radius-pill: 9999px;
+  --gf-glow: 0 0 0 10px rgba(255, 255, 255, 0.18), 0 0 36px rgba(255, 255, 255, 0.55);
+  --gf-font: system-ui, -apple-system, sans-serif;
 
-.gf-capsule:hover:not(.gf-capsule-selected) {
-  box-shadow: 0 12px 40px rgba(0, 122, 139, 0.18), 0 2px 8px rgba(0,0,0,0.06);
-}
+  /* Extra darkening layers over the scrim */
+  --gf-dim-focus: rgba(0, 0, 0, 0.3);
+  --gf-dim-dialog: rgba(0, 0, 0, 0.2);
 
-.gf-capsule:focus-within {
-  box-shadow: 0 12px 40px rgba(0, 122, 139, 0.22), 0 0 0 3px rgba(0, 122, 139, 0.35);
-}
+  /* Exit dialog — the one opaque surface */
+  --gf-dialog-bg: #fff;
+  --gf-dialog-text: #1a1a1a;
+  --gf-dialog-text-muted: #555;
+  --gf-dialog-divider: rgba(0, 0, 0, 0.12);
+  --gf-danger: #d92d20;
 
-/* Selected capsule — gradient fill + elevated shadow */
-.gf-capsule-selected {
-  background: linear-gradient(135deg, #007A8B 0%, #3AAF4D 37%, #A8CB38 86%);
-  border-color: transparent;
-  box-shadow: 0 20px 56px rgba(0, 122, 139, 0.38), 0 6px 20px rgba(0,0,0,0.12) !important;
-  color: #fff !important;
-  transform: scale(1.02);
-}
+  /* Status dots — the only colour allowed, and tiny */
+  --gf-status-positive: #4ade80;
+  --gf-status-warning: #fbbf24;
+  --gf-status-neutral: rgba(255, 255, 255, 0.6);
 
-/* Rect capsule (pill with corners for inputs) */
-.gf-rect {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 122, 139, 0.12), 0 2px 8px rgba(0,0,0,0.06);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  backdrop-filter: blur(14px) saturate(1.2);
-}
+  --gf-focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.9);
 
-.gf-rect:focus-within {
-  box-shadow: 0 12px 40px rgba(0, 122, 139, 0.22), 0 0 0 3px rgba(0, 122, 139, 0.35);
-}
-
-/* Focus ring for interactive capsules */
-.gf-capsule:focus-visible,
-.gf-rect:focus-visible {
-  outline: 3px solid rgba(0, 122, 139, 0.5);
-  outline-offset: 2px;
+  font-family: var(--gf-font);
+  color: var(--gf-text);
 }
 
-/* Aurora blobs */
-.gf-aurora {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-  will-change: transform;
+.gf-scrim {
+  background: var(--gf-scrim);
 }
 
-/* Next button pulse when valid */
-@keyframes gf-valid-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0,122,139,0); }
-  50%       { box-shadow: 0 0 0 18px rgba(0,122,139,0.0); }
-}
-.gf-next-pulse {
-  animation: gf-valid-pulse 0.6s ease-out 1;
-}
-
-/* Shake on invalid submit */
-@keyframes gf-shake {
-  0%, 100% { transform: translateX(0); }
-  20%       { transform: translateX(-8px); }
-  40%       { transform: translateX(8px); }
-  60%       { transform: translateX(-5px); }
-  80%       { transform: translateX(5px); }
-}
-.gf-shake {
-  animation: gf-shake 0.36s ease-out;
+.gf-glass {
+  background: var(--gf-glass-bg);
+  border: 1px solid var(--gf-glass-border);
+  box-shadow: var(--gf-glass-shadow);
+  -webkit-backdrop-filter: blur(var(--gf-glass-blur));
+  backdrop-filter: blur(var(--gf-glass-blur));
+  color: var(--gf-text);
+  /* No opacity transition here: GSAP owns opacity on glass elements. */
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Highlight match */
+button.gf-glass:not(:disabled):hover,
+.gf-glass.gf-hoverable:hover {
+  background: var(--gf-glass-bg-hover);
+}
+
+.gf-selected,
+button.gf-glass.gf-selected:hover {
+  background: var(--gf-selected-bg);
+  color: var(--gf-selected-text);
+  transform: scale(1.04);
+}
+
+.gf-muted {
+  color: var(--gf-text-muted);
+}
+.gf-selected .gf-muted {
+  color: var(--gf-selected-text);
+  opacity: 0.7;
+}
+
+.gf-card {
+  border-radius: var(--gf-radius-card);
+}
+.gf-pill {
+  border-radius: var(--gf-radius-pill);
+}
+
+/* Matched characters in search results */
 .gf-match {
-  background: rgba(0, 122, 139, 0.15);
+  background: var(--gf-selected-bg);
+  color: var(--gf-selected-text);
   border-radius: 3px;
   padding: 0 1px;
 }
-
-/* Scrollbar inside Lenis regions */
-.gf-scroll-region {
-  overflow: hidden;
-  position: relative;
+.gf-selected .gf-match {
+  background: transparent;
+  padding: 0;
 }
 
-/* Hide scrollbars (element itself + any nested scroll containers) */
-.gf-no-scroll::-webkit-scrollbar { display: none; }
-.gf-no-scroll { scrollbar-width: none; -ms-overflow-style: none; }
-.gf-no-scroll *::-webkit-scrollbar { display: none; }
-.gf-no-scroll * { scrollbar-width: none; -ms-overflow-style: none; }
-
-/* Radar ring */
-@keyframes gf-radar {
-  0%   { transform: scale(1);   opacity: 0.5; }
-  100% { transform: scale(3.2); opacity: 0; }
+.gf-root input::placeholder {
+  color: var(--gf-text-muted);
 }
 
-/* Signal bars */
-.gf-signal-bar {
-  width: 4px;
-  border-radius: 2px;
-  background: #007A8B;
-  display: inline-block;
-  margin: 0 1px;
-  vertical-align: bottom;
+.gf-root :focus-visible {
+  outline: none;
+  box-shadow: var(--gf-focus-ring);
 }
-.gf-signal-bar.dim { background: rgba(0,122,139,0.2); }
-
-/* Age badge count-up */
-.gf-age-badge {
-  background: rgba(0,122,139,0.1);
-  color: #007A8B;
-  border-radius: 9999px;
-  padding: 4px 14px;
-  font-size: 15px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.gf-root .gf-glass:focus-visible {
+  box-shadow: var(--gf-glass-shadow), var(--gf-focus-ring);
+}
+.gf-root .gf-dialog :focus-visible {
+  box-shadow: inset 0 0 0 2px var(--gf-dialog-text);
 }
 
-/* Stepper button */
-.gf-stepper {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.72);
-  border: 1px solid rgba(255,255,255,0.85);
-  box-shadow: 0 4px 20px rgba(0,122,139,0.12);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
-  font-size: 22px;
-  color: #007A8B;
-  font-weight: 300;
+/* Proceed button */
+.gf-proceed {
+  background: var(--gf-selected-bg);
+  color: var(--gf-selected-text);
+  transition: transform 0.12s ease, background-color 0.12s ease, opacity 0.15s ease;
 }
-.gf-stepper:active { transform: scale(0.93); }
+.gf-proceed:active:not(:disabled) {
+  transform: scale(0.92);
+  background: var(--gf-selected-pressed);
+}
+.gf-proceed-glow {
+  box-shadow: var(--gf-glow);
+}
 
-/* Visible-focus ring (overrides UA) */
-*:focus-visible {
-  outline: 3px solid rgba(0,122,139,0.45);
-  outline-offset: 2px;
+.gf-no-scroll {
+  scrollbar-width: none;
+}
+.gf-no-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.gf-root input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.gf-root input[type="number"]::-webkit-inner-spin-button,
+.gf-root input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

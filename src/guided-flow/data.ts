@@ -17,8 +17,14 @@ export interface Patient {
 export interface Device {
   name: string;
   serial: string;
-  signal: number; // 1-4
-  delayed?: boolean; // appears later in scan
+  /** Mock scan: ms after the scan starts that this device is discovered. */
+  foundAfter: number;
+}
+
+export interface TestType {
+  id: string;
+  label: string;
+  desc: string;
 }
 
 export interface Answers {
@@ -31,6 +37,58 @@ export interface Answers {
 }
 
 export const PATIENTS: Patient[] = [
+  {
+    initials: "MJ",
+    name: "Michael M. Jonathan",
+    mrn: "MRN-02011",
+    planOfCare: "PT | EMR Synced: Y",
+    admissionDate: "2024-11-01",
+    status: "Active",
+    gender: "Male",
+    dob: "03/15/1980",
+    weight: "142",
+    height: "5'6\"",
+    ethnicity: "White / Caucasian",
+  },
+  {
+    initials: "MW",
+    name: "Michelle A. Worthey",
+    mrn: "MRN-02012",
+    planOfCare: "PT | EMR Synced: Y",
+    admissionDate: "2024-11-01",
+    status: "Active",
+    gender: "Female",
+    dob: "07/22/1974",
+    weight: "151",
+    height: "5'5\"",
+    ethnicity: "Black or African American",
+  },
+  {
+    initials: "MA",
+    name: "Michael Anderson",
+    mrn: "MRN-02013",
+    planOfCare: "OT | EMR Synced: Y",
+    admissionDate: "2024-11-01",
+    status: "Active",
+    gender: "Male",
+    dob: "12/02/1961",
+    weight: "188",
+    height: "5'11\"",
+    ethnicity: "",
+  },
+  {
+    initials: "MB",
+    name: "Michelle Bennett",
+    mrn: "MRN-02014",
+    planOfCare: "PT | EMR Synced: N",
+    admissionDate: "2024-11-01",
+    status: "Active",
+    gender: "Female",
+    dob: "05/09/1989",
+    weight: "",
+    height: "5'4\"",
+    ethnicity: "Hispanic or Latino",
+  },
   {
     initials: "AM",
     name: "Alice Martinez",
@@ -294,21 +352,21 @@ export const PATIENTS: Patient[] = [
 ];
 
 export const DEVICES: Device[] = [
-  { name: "SPIROBANK OXI",   serial: "SE-011-E012596", signal: 4 },
-  { name: "SPIROBANK OXI",   serial: "SE-011-E012594", signal: 3 },
-  { name: "SPIROBANK SMART", serial: "SE-012-E009871", signal: 2, delayed: true },
+  { name: "SPIROBANK OXI",   serial: "SE-011-E010832", foundAfter: 1600 },
+  { name: "SPIROBANK OXI",   serial: "SE-011-E010824", foundAfter: 2100 },
+  { name: "SPIROBANK SMART", serial: "SM-009-Z117694", foundAfter: 2600 },
 ];
 
-export const TEST_TYPES = [
+export const TEST_TYPES: TestType[] = [
   {
     id: "expiratory",
     label: "Expiratory Maneuver",
-    desc: "Measures how fast and fully you can exhale. Used for FEV1, FVC, and PEF.",
+    desc: "It is a technique used to enhance lung function by forcefully exhaling air.",
   },
   {
     id: "exp_insp",
-    label: "Expiratory / Inspiratory Maneuver",
-    desc: "Full loop: measures both exhalation and inhalation (FVC, FEV1, PIF).",
+    label: "Expiratory/Inspiratory Maneuver",
+    desc: "It uses controlled breathing techniques to enhance lung function and overall respiratory health.",
   },
 ];
 
@@ -332,4 +390,22 @@ export function calcAge(dob: string): string {
     if (yrs <= 0 || yrs > 120) return "";
     return yrs.toFixed(1);
   } catch { return ""; }
+}
+
+/** "2024-11-01" → "11/01/2024" */
+export function formatAdmission(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return y && m && d ? `${m}/${d}/${y}` : iso;
+}
+
+/** Patient record height ("5'6\"") → answer fields. */
+export function splitHeight(height = ""): { ft: string; inches: string } {
+  const [ft = "", inches = ""] = height.replace(/["″]/g, "").split(/['′]/).map(s => s.trim());
+  return { ft, inches };
+}
+
+export function heightToCm(ft: string, inches: string): number {
+  const f = parseFloat(ft) || 0;
+  const i = parseFloat(inches) || 0;
+  return Math.round((f * 12 + i) * 2.54);
 }

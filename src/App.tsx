@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import GuidedFlow from "./guided-flow/GuidedFlow";
-import type { Answers } from "./guided-flow/data";
-import type { Patient } from "./guided-flow/data";
-import type { Device } from "./guided-flow/data";
+import { spirometryFlow, type SpirometryContext } from "./guided-flow/flows/spirometry";
 
 const assetPathPrefix = "/assets";
 
@@ -2002,6 +2000,7 @@ export default function App() {
   const [guidePatientName, setGuidePatientName] = useState<string | undefined>();
   const [guideDeviceSerial, setGuideDeviceSerial] = useState<string | undefined>();
   const [guideTestType, setGuideTestType] = useState<string | undefined>();
+  const [testFromGuide, setTestFromGuide] = useState(false);
 
   function handleStartGuide() {
     setChatSlideOut(true);
@@ -2012,11 +2011,12 @@ export default function App() {
     }, 260);
   }
 
-  function handleGuideStart(p: Patient, d: Device, testLabel: string, _ans: Answers) {
-    setGuidePatientName(p.name);
-    setGuideDeviceSerial(d.serial);
-    setGuideTestType(testLabel);
+  function handleGuideStart({ patient, device, test }: SpirometryContext) {
+    setGuidePatientName(patient?.name);
+    setGuideDeviceSerial(device?.serial);
+    setGuideTestType(test?.label);
     setGuideOpen(false);
+    setTestFromGuide(true);
     setTestOpen(true);
   }
 
@@ -2194,6 +2194,7 @@ export default function App() {
       {/* GuidedFlow wizard */}
       {guideOpen && (
         <GuidedFlow
+          flow={spirometryFlow}
           onClose={() => setGuideOpen(false)}
           onStart={handleGuideStart}
         />
@@ -2222,7 +2223,7 @@ export default function App() {
 
       {instructionsOpen && <InstructionsScreen onBack={() => { setInstructionsOpen(false); setPatientDemoOpen(true); }} onStartTest={() => { setInstructionsOpen(false); setTestOpen(true); }} onWarmUp={() => { setInstructionsOpen(false); setTestOpen(true); }} />}
 
-      {testOpen && <TestExecutionScreen onBack={() => { setTestOpen(false); setInstructionsOpen(true); }} onEndTest={() => { setTestOpen(false); setTestCompletedOpen(true); }} patientName={guidePatientName} deviceSerial={guideDeviceSerial} testType={guideTestType} />}
+      {testOpen && <TestExecutionScreen onBack={() => { setTestOpen(false); if (testFromGuide) setTestFromGuide(false); else setInstructionsOpen(true); }} onEndTest={() => { setTestOpen(false); setTestFromGuide(false); setTestCompletedOpen(true); }} patientName={guidePatientName} deviceSerial={guideDeviceSerial} testType={guideTestType} />}
       {testCompletedOpen && <TestCompletedModal onExit={() => setTestCompletedOpen(false)} onSeeResults={() => { setTestCompletedOpen(false); setResultsOpen(true); }} />}
       {resultsOpen && <ResultsScreen onBack={() => { setResultsOpen(false); setTestCompletedOpen(true); }} onSelectAction={() => { setResultsOpen(false); setSelectActionOpen(true); }} />}
       {selectActionOpen && <SelectActionScreen onDone={() => setSelectActionOpen(false)} />}

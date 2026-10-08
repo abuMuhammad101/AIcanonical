@@ -1,22 +1,53 @@
-// Single source of truth for all GuidedFlow motion tokens
+// Single source of truth for all GuidedFlow motion tokens. Durations in seconds.
 export const M = {
-  // durations (seconds)
-  micro:  0.18,
-  base:   0.5,
-  slow:   0.9,
+  // Overlay in / out
+  overlayIn: 0.25,
+  overlayOut: 0.3,
+  overlayEase: "power2.out",
+  stageRise: 12,
 
-  // eases (GSAP strings)
-  enter:  "expo.out",
-  morph:  "power2.inOut",
-  pop:    "back.out(1.3)",
-  exit:   "power2.in",
+  // Step change — one surface reshaping itself, never a sideways slide
+  stepOut: 0.18,
+  stepIn: 0.22,
+  stepScale: 0.96,
+  stepOutEase: "power2.in",
+  stepInEase: "power2.out",
 
-  // beat transition
-  outY:   -16,
-  inY:     24,
-  stagger: 0.06,
+  // Lists and grids
+  stagger: 0.05,
+  itemIn: 0.22,
+  itemRise: 8,
 
-  // aurora loop range
-  auroraMin: 20,
-  auroraMax: 30,
-};
+  // Selection: white state, then hold before the step change
+  select: 0.15,
+  selectHold: 0.25,
+  selectScale: 1.04,
+  dimOpacity: 0.35,
+
+  // Search
+  searchDebounce: 0.15,
+
+  // Device discovery
+  radarPeriod: 1.6,
+  radarRings: 3,
+  radarScale: 2.4,
+  bubbleScanScale: 0.7, // 140px scan bubble drawn from a 200px bubble
+  bubbleGrow: 0.4,
+  bubbleSplit: 0.6,
+  bubbleEase: "back.out(1.4)",
+  bubbleMerge: 0.45,
+  bubbleGap: 40,
+  scanEmptyAfter: 8,
+
+  // Review
+  flip: 0.45,
+  flipEase: "power2.inOut",
+  glowPulse: 2,
+  glowScale: 1.06,
+
+  // Dialog
+  dialog: 0.2,
+  dialogScale: 0.95,
+} as const;
+
+export const ms = (s: number) => Math.round(s * 1000);
