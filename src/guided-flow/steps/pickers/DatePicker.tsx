@@ -79,7 +79,7 @@ export default function DatePicker({ spec, values, onConfirm, flipId }: PickerPr
 
   const cellBtn = (sel: boolean) => ({
     background: sel ? "var(--gf-selected-bg)" : "transparent",
-    color: sel ? "var(--gf-selected-text)" : "var(--gf-text)",
+    color: sel ? "var(--gf-selected-text)" : "inherit",
   });
 
   return (
@@ -103,7 +103,7 @@ export default function DatePicker({ spec, values, onConfirm, flipId }: PickerPr
       </div>
       <PickerError message={error} />
 
-      <div style={{ borderTop: "1px solid var(--gf-glass-border)", paddingTop: 12 }}>
+      <div style={{ borderTop: "1px solid var(--gf-surface-border-color)", paddingTop: 12 }}>
         <div className="flex items-center justify-between mb-2">
           <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month"
             className="size-11 rounded-full flex items-center justify-center" style={{ visibility: mode === "days" ? "visible" : "hidden" }}>

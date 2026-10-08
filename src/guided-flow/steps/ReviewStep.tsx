@@ -45,7 +45,7 @@ function Picker({ field, values, onConfirm, flipId }: { field: ReviewField; valu
 }
 
 export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
-  const { fields, reducedMotion: rm, setFocusMode, setEscapeHandler, announce } = p;
+  const { fields, reducedMotion: rm, setFocusMode, setEscapeHandler, setCommandHandler, announce } = p;
   const [values, setValues] = useState<Values>(() => p.initialValues(p.context));
   const [editing, setEditing] = useState<number | null>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -159,6 +159,19 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
       gsap.fromTo(child, { opacity: 0 }, { opacity: 1, duration: M.itemIn, delay: M.flip * 0.6 }));
   }, [editing, rm]);
 
+  // External "edit" (e.g. the assistant's Edit height chip)
+  const openRef = useRef(open);
+  openRef.current = open;
+  useEffect(() => {
+    setCommandHandler(cmd => {
+      const i = cmd.type === "edit" ? fields.findIndex(f => f.id === cmd.value) : -1;
+      if (i < 0) return false;
+      openRef.current(i);
+      return true;
+    });
+    return () => setCommandHandler(null);
+  }, [setCommandHandler, fields]);
+
   function proceed() {
     if (!ready || editing !== null || morphing.current) return;
     p.complete(p.toContext(values));
@@ -180,7 +193,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
                   data-flip-id={`slot-${i}`}
                   onClick={() => open(i)}
                   aria-label={`${f.label}: ${v || "not set"}. Edit`}
-                  className="gf-glass gf-card relative flex flex-col justify-center items-start text-left"
+                  className="gf-surface gf-card relative flex flex-col justify-center items-start text-left"
                   style={{ width: TILE_W, height: TILE_H, padding: "18px 22px 18px 24px", gap: 6 }}
                 >
                   <span className="absolute gf-muted" style={{ top: 16, right: 16 }}><PencilIcon size={18} /></span>
@@ -216,7 +229,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
             onClick={proceed}
             disabled={!ready || editing !== null}
             aria-label={ready ? p.proceedLabel : `${p.proceedLabel} — add ${missing.map(f => f.label).join(", ")} first`}
-            className={`relative rounded-full flex items-center justify-center ${ready && editing === null ? "gf-proceed" : "gf-glass"}`}
+            className={`relative rounded-full flex items-center justify-center ${ready && editing === null ? "gf-proceed" : "gf-surface"}`}
             style={{ width: PROCEED, height: PROCEED }}
           >
             <ArrowUpRightIcon size={80} strokeWidth={0.9} />

@@ -21,7 +21,7 @@ const BUBBLE = 200;
 const slotX = (i: number, n: number) => (i - (n - 1) / 2) * (BUBBLE + M.bubbleGap);
 
 export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T, C>) {
-  const { scan, getKey, announce, reducedMotion: rm, noun } = p;
+  const { scan, getKey, announce, reducedMotion: rm, noun, setCommandHandler } = p;
   const [phase, setPhase] = useState<Phase>("scanning");
   const [items, setItems] = useState<T[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -171,6 +171,20 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
       .to(bubbles[0], { scale: M.bubbleScanScale, duration: M.bubbleMerge, ease: "power2.inOut" }, 0.1);
   }
 
+  // External "rescan" (e.g. the assistant's Scan again chip)
+  const rescanRef = useRef(scanAgain);
+  rescanRef.current = scanAgain;
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  useEffect(() => {
+    setCommandHandler(cmd => {
+      if (cmd.type !== "rescan") return false;
+      if (phaseRef.current === "done" || phaseRef.current === "empty") rescanRef.current();
+      return true;
+    });
+    return () => setCommandHandler(null);
+  }, [setCommandHandler]);
+
   // ── 6. Select ───────────────────────────────────────────────────────────────
   function pick(i: number) {
     const item = items[i];
@@ -197,7 +211,7 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
             className="absolute rounded-full pointer-events-none"
             style={{
               left: "50%", top: "50%", width: 140, height: 140, marginLeft: -70, marginTop: -70,
-              border: "1.5px solid var(--gf-glass-border)", opacity: 0,
+              border: "1.5px solid var(--gf-radar-ring)", opacity: 0,
             }} />
         ))}
 
@@ -213,12 +227,11 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
               disabled={!item || phase === "merging" || (selected !== null && !isSel)}
               onClick={() => pick(i)}
               aria-label={item ? `Select ${noun} ${p.getLabel(item)}` : `Scanning for ${noun}s`}
-              className={`gf-glass absolute rounded-full flex flex-col items-center justify-center gap-3 ${isSel ? "gf-selected" : ""}`}
+              className={`gf-surface absolute rounded-full flex flex-col items-center justify-center gap-3 ${isSel ? "gf-selected" : ""}`}
               style={{
                 left: "50%", top: "50%", width: BUBBLE, height: BUBBLE, marginLeft: -BUBBLE / 2, marginTop: -BUBBLE / 2,
                 zIndex: i === 0 ? 2 : 1,
                 cursor: item ? "pointer" : "default",
-                color: isSel ? "var(--gf-selected-text)" : "var(--gf-text)",
               }}
             >
               <span className="flex items-center justify-center" style={{ height: 56 }}>{p.icon}</span>

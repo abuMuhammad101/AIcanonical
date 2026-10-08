@@ -1,16 +1,39 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Flip } from "gsap/Flip";
 import "./guided-flow.css";
-import { M } from "./motion";
-import type { FlowConfig, StepApi } from "./flows/types";
+import { M, ms } from "./motion";
+import type { FlowCommand, FlowConfig, StepApi } from "./flows/types";
 import { CloseIcon, ResetIcon } from "./steps/icons";
+import ThemeSwitcher, { switcherEnabled, useGuideTheme } from "./ThemeSwitcher";
+import { MicButton, TranscriptBubble } from "./voice/VoiceControls";
+import { useVoice } from "./voice/useVoice";
 
 gsap.registerPlugin(useGSAP, Flip);
 
-// Generic flow runner: scrim, stage, dock and exit dialog. Knows nothing about
-// any particular flow — steps and their order come from `flow`.
+// Generic flow runner: scrim, stage, dock, voice and exit dialog. Knows nothing
+// about any particular flow — steps and their order come from `flow`.
+
+export interface GuidedFlowHandle {
+  /** Forward a command (e.g. from a chat quick-reply) to the current step. */
+  sendCommand: (command: FlowCommand) => boolean;
+}
+
+export interface GuideStepState<C> {
+  stepId: string;
+  stepLabel: string;
+  context: Partial<C>;
+}
+
+export interface GuideVoice {
+  /** Transcript the scripted fallback types on a given step. */
+  scriptFor: (stepId: string) => string;
+  /** The transcript was sent; the host opens its assistant chat. */
+  onSend: (transcript: string, stepId: string) => void;
+  /** Where the transcript bubble flies to on send. */
+  target?: () => DOMRect | null;
+}
 
 interface Props<C extends object> {
   flow: FlowConfig<C>;
@@ -18,6 +41,12 @@ interface Props<C extends object> {
   onClose: () => void;
   /** Called once with the collected context after the last step (the flow's onComplete). */
   onStart: (context: C) => void;
+  /** Host UI (e.g. the assistant chat) is on top: keep state, dim, ignore input. */
+  paused?: boolean;
+  onStepChange?: (state: GuideStepState<C>) => void;
+  /** Enables the dock's Speak button. */
+  voice?: GuideVoice;
+  ref?: Ref<GuidedFlowHandle>;
 }
 
 const FOCUSABLE = 'input:not([disabled]),button:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -26,7 +55,7 @@ function isFilled<C extends object>(ctx: Partial<C>, keys: (keyof C)[]) {
   return keys.length > 0 && keys.every(k => ctx[k] !== undefined && ctx[k] !== null);
 }
 
-export default function GuidedFlow<C extends object>({ flow, initialContext, onClose, onStart }: Props<C>) {
+export default function GuidedFlow<C extends object>({ flow, initialContext, onClose, onStart, paused = false, onStepChange, voice, ref }: Props<C>) {
   const steps = flow.steps;
   const initialRef = useRef<Partial<C>>(initialContext ?? {});
 
@@ -49,7 +78,10 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const indexRef = useRef(index);
   const busyRef = useRef(false);
   const escapeRef = useRef<(() => void) | null>(null);
+  const commandRef = useRef<((c: FlowCommand) => boolean) | null>(null);
   indexRef.current = index;
+  const [theme, setTheme] = useGuideTheme();
+  const showSwitcher = useMemo(switcherEnabled, []);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const scrimRef = useRef<HTMLDivElement>(null);
@@ -57,6 +89,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const dockRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
 
   const rm = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
 
@@ -131,6 +164,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     setDirty(false);
     setFocusMode(false);
     escapeRef.current = null;
+    commandRef.current = null;
   };
 
   // ── Leaving the overlay ─────────────────────────────────────────────────────
@@ -164,6 +198,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
 
   const announce = useCallback((msg: string) => setLiveMsg(msg), []);
   const setEscapeHandler = useCallback((fn: (() => void) | null) => { escapeRef.current = fn; }, []);
+  const setCommandHandler = useCallback((fn: ((c: FlowCommand) => boolean) | null) => { commandRef.current = fn; }, []);
 
   const api: StepApi<C> = useMemo(() => ({
     context: context as C,
@@ -172,14 +207,58 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     announce,
     setFocusMode,
     setEscapeHandler,
+    setCommandHandler,
     reducedMotion: rm,
-  }), [context, complete, announce, setEscapeHandler, rm]);
+  }), [context, complete, announce, setEscapeHandler, setCommandHandler, rm]);
+
+  useImperativeHandle(ref, () => ({
+    sendCommand: command => commandRef.current?.(command) ?? false,
+  }), []);
+
+  const step = steps[index];
+
+  useEffect(() => {
+    onStepChange?.({ stepId: step.id, stepLabel: step.label, context });
+  }, [step, context, onStepChange]);
+
+  // ── Voice ───────────────────────────────────────────────────────────────────
+  const stepIdRef = useRef(step.id);
+  stepIdRef.current = step.id;
+  const voiceRef = useRef(voice);
+  voiceRef.current = voice;
+  const voiceScript = useCallback(() => voiceRef.current?.scriptFor(stepIdRef.current) ?? "", []);
+  const voiceTarget = useCallback(() => voiceRef.current?.target?.() ?? null, []);
+  const voiceSend = useCallback((t: string) => voiceRef.current?.onSend(t, stepIdRef.current), []);
+  const speak = useVoice({ reducedMotion: rm, bubbleRef, script: voiceScript, target: voiceTarget, onSend: voiceSend });
+  const listening = speak.state === "listening";
+  const cancelVoice = speak.cancel;
+
+  // ── Paused under host UI ────────────────────────────────────────────────────
+  const wasPaused = useRef(paused);
+  useEffect(() => {
+    if (paused && !wasPaused.current) cancelVoice();
+    if (!paused && wasPaused.current) focusFirst();
+    wasPaused.current = paused;
+  }, [paused, cancelVoice, focusFirst]);
+
+  // ── Theme: crossfade colours and retarget the host blur ─────────────────────
+  const themeMounted = useRef(false);
+  useLayoutEffect(() => {
+    if (!themeMounted.current) { themeMounted.current = true; return; }
+    const root = rootRef.current;
+    if (!root) return;
+    root.classList.add("gf-theme-switching");
+    gsap.to(blur.current, { px: hostBlur(), duration: M.themeFade, ease: "power1.inOut", onUpdate: applyBlur, overwrite: true });
+    const t = window.setTimeout(() => root.classList.remove("gf-theme-switching"), ms(M.themeFade) + 50);
+    return () => window.clearTimeout(t);
+  }, [theme, hostBlur, applyBlur]);
 
   // ── Dock actions ────────────────────────────────────────────────────────────
   const hasProgress =
     index !== firstIndex || dirty || Object.keys(context).length > Object.keys(initialRef.current).length;
 
   function reset() {
+    cancelVoice();
     if (busyRef.current) return;
     busyRef.current = true;
     stepOut(() => {
@@ -193,6 +272,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   }
 
   function requestClose() {
+    cancelVoice();
     if (hasProgress) { setShowExit(true); return; }
     fadeOut(onClose);
   }
@@ -214,9 +294,16 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   // ── Keyboard: Escape + focus trap ───────────────────────────────────────────
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (paused) return;
+      const typing = e.target instanceof HTMLElement && e.target.matches("input,textarea,[contenteditable]");
+      if ((e.key === "t" || e.key === "T") && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        setTheme(theme === "dark" ? "light" : "dark");
+        return;
+      }
       if (e.key === "Escape") {
         e.preventDefault();
         if (showExit) { setShowExit(false); focusFirst(); return; }
+        if (speak.state === "listening" || speak.state === "missed") { cancelVoice(); return; }
         if (escapeRef.current) { escapeRef.current(); return; }
         requestClose();
         return;
@@ -237,16 +324,15 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const step = steps[index];
-
   return (
-    <div ref={rootRef} role="dialog" aria-modal="true" aria-label={flow.label}
+    <div ref={rootRef} role="dialog" aria-modal={!paused} aria-label={flow.label}
+      data-gf-theme={theme} inert={paused}
       className="gf-root fixed inset-0 z-50 overflow-hidden select-none">
 
       {/* Scrim — blurs the host screen; taps do nothing */}
       <div ref={scrimRef} className="gf-scrim absolute inset-0" style={{ opacity: 0 }} aria-hidden="true" />
       <div className="absolute inset-0 pointer-events-none transition-opacity duration-200"
-        style={{ background: "var(--gf-dim-focus)", opacity: focusMode ? 1 : 0 }} aria-hidden="true" />
+        style={{ background: "var(--gf-picker-scrim)", opacity: focusMode ? 1 : 0 }} aria-hidden="true" />
 
       {/* Announcements */}
       <p className="sr-only" aria-live="polite">{`Step ${index + 1} of ${steps.length}, ${step.prompt}`}</p>
@@ -254,28 +340,39 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
 
       {/* Stage — the current step renders and swaps in place */}
       <div ref={stageRef} tabIndex={-1} className="absolute inset-0 outline-none" style={{ opacity: 0 }}>
-        <div key={`${step.id}:${resetKey}`} className="contents">
+        {/* While listening the step dims and ignores taps */}
+        <div key={`${step.id}:${resetKey}`} className="absolute inset-0 transition-opacity duration-200"
+          style={{ opacity: listening ? 0.5 : 1, pointerEvents: listening ? "none" : undefined }}
+          aria-hidden={listening || undefined}>
           {step.render(api)}
         </div>
       </div>
 
       {/* Dock */}
       <div ref={dockRef}
-        className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4 transition-opacity duration-200"
+        className="absolute left-1/2 -translate-x-1/2 flex items-center transition-opacity duration-200"
         style={{ bottom: 52, opacity: 0 }}>
-        <div style={{ opacity: focusMode ? 0.4 : 1 }} className="flex items-center gap-4 transition-opacity duration-200">
+        {voice && <TranscriptBubble ref={bubbleRef} state={speak.state} text={speak.text} />}
+        <div style={{ opacity: focusMode ? 0.4 : 1, gap: 17 }} className="flex items-center transition-opacity duration-200">
           {hasProgress && (
             <button onClick={reset} aria-label="Reset guide"
-              className="gf-glass rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
+              className="gf-surface rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
               <ResetIcon size={26} />
             </button>
           )}
           <button onClick={requestClose} aria-label="Close guide"
-            className="gf-glass rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
+            className="gf-surface rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
             <CloseIcon size={26} />
           </button>
+          {voice && <MicButton state={speak.state} label={speak.label} onClick={speak.toggle} reducedMotion={rm} />}
         </div>
       </div>
+
+      {/* Paused under host UI (assistant chat) */}
+      <div className="absolute inset-0 pointer-events-none transition-opacity duration-200"
+        style={{ background: "var(--gf-dim-paused)", opacity: paused ? 1 : 0 }} aria-hidden="true" />
+
+      {showSwitcher && <ThemeSwitcher theme={theme} onChange={setTheme} />}
 
       {/* Exit dialog */}
       {showExit && (

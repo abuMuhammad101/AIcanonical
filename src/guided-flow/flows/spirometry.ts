@@ -85,6 +85,7 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
   steps: [
     {
       id: "patient",
+      label: "Find patient",
       prompt: "search for a patient",
       provides: ["patient"],
       render: api => h(SearchStep<Patient, SpirometryContext>, {
@@ -103,6 +104,7 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
     },
     {
       id: "device",
+      label: "Connect device",
       prompt: "select a device",
       provides: ["device"],
       render: api => h(DiscoverStep<Device, SpirometryContext>, {
@@ -117,6 +119,7 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
     },
     {
       id: "test",
+      label: "Choose exercise",
       prompt: "choose an exercise",
       provides: ["test"],
       render: api => h(ChoiceStep<SpirometryContext>, {
@@ -127,6 +130,7 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
     },
     {
       id: "demographics",
+      label: "Review details",
       prompt: "review demographics",
       provides: ["answers"],
       render: api => h(ReviewStep<SpirometryContext>, {

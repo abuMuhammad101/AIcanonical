@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
-import GuidedFlow from "./guided-flow/GuidedFlow";
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
+import GuidedFlow, { type GuidedFlowHandle, type GuideStepState } from "./guided-flow/GuidedFlow";
 import { spirometryFlow, type SpirometryContext } from "./guided-flow/flows/spirometry";
+import { resolveReply, scriptedTranscript, type AssistantReply, type ReplyChip } from "./guided-flow/voiceScripts";
 
 const assetPathPrefix = "/assets";
 
@@ -552,16 +553,50 @@ const araSteps = [
 // ─── Chat panel ───────────────────────────────────────────────────────────────
 type ChatPhase = "idle" | "thinking" | "answered";
 
+/** The chat was opened while the interactive guide is running. */
+interface AskGuide {
+  /** e.g. "Connect device · Michael M. Jonathan" */
+  label: string;
+  reply: (text: string) => AssistantReply;
+  onChip: (chip: ReplyChip) => void;
+  /** Transcript sent from the guide's Speak button: shown as the user's message. */
+  voiceMessage?: string;
+}
+
 interface AskPanelProps {
   onClose: () => void;
   onStartGuide: () => void;
   slideOut?: boolean;
+  guide?: AskGuide;
 }
 
-function AskPanel({ onClose, onStartGuide, slideOut = false }: AskPanelProps) {
+/** Renders **bold** spans in scripted replies. */
+function richText(text: string): ReactNode {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? <strong key={i} style={{ fontWeight: 700 }}>{part.slice(2, -2)}</strong> : part,
+  );
+}
+
+function GuideChip({ label, onClick, back }: { label: string; onClick: () => void; back?: boolean }) {
+  return (
+    <button onClick={onClick}
+      className="flex items-center gap-1.5 hover:bg-gray-50 transition-colors"
+      style={{ width: "fit-content", background: "#FFFFFF", boxShadow: "0px 4px 20px rgba(4,6,15,0.08)", borderRadius: 100, padding: "8px 14px", border: "1px solid #E3EEF0" }}>
+      {back && <span aria-hidden="true" style={{ color: "#007A8B", fontSize: 15, lineHeight: 1 }}>←</span>}
+      <span style={{ fontFamily: SF, fontWeight: 500, fontSize: 15, color: back ? "#007A8B" : "#0F0F0F" }}>{label}</span>
+    </button>
+  );
+}
+
+const GUIDE_REPLY_DELAY = 1600;
+
+function AskPanel({ onClose, onStartGuide, slideOut = false, guide }: AskPanelProps) {
   const [inputText, setInputText] = useState("");
-  const [phase, setPhase] = useState<ChatPhase>("idle");
+  const [phase, setPhase] = useState<ChatPhase>(guide?.voiceMessage ? "thinking" : "idle");
+  const [guideUser, setGuideUser] = useState(guide?.voiceMessage ?? "");
+  const [guideReply, setGuideReply] = useState<AssistantReply | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const replyRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const charCount = inputText.length;
 
@@ -569,10 +604,35 @@ function AskPanel({ onClose, onStartGuide, slideOut = false }: AskPanelProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [phase]);
 
+  // Guide mode: answer the voice transcript; focus the panel or the reply
+  useEffect(() => {
+    if (!guide) return;
+    if (!guide.voiceMessage) { inputRef.current?.focus({ preventScroll: true }); return; }
+    const t = setTimeout(() => { setGuideReply(guide.reply(guide.voiceMessage!)); setPhase("answered"); }, GUIDE_REPLY_DELAY);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (guide && phase === "answered") replyRef.current?.focus({ preventScroll: true });
+  }, [guide, phase]);
+  useEffect(() => {
+    if (!guide) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [guide, onClose]);
+
   function handleSend() {
     if (!inputText.trim()) return;
     setPhase("thinking");
-    setTimeout(() => setPhase("answered"), 2800);
+    if (guide) {
+      const text = inputText.trim();
+      setGuideUser(text);
+      setGuideReply(null);
+      setTimeout(() => { setGuideReply(guide.reply(text)); setPhase("answered"); }, GUIDE_REPLY_DELAY);
+    } else {
+      setTimeout(() => setPhase("answered"), 2800);
+    }
     setInputText("");
   }
 
@@ -589,9 +649,9 @@ function AskPanel({ onClose, onStartGuide, slideOut = false }: AskPanelProps) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex">
-      {/* Overlay */}
-      <div className="absolute inset-0 backdrop-blur-[4px]" style={{ background: "rgba(67,67,67,0.65)" }} onClick={onClose} />
+    <div className="fixed inset-0 z-[60] flex">
+      {/* Overlay — over the guide, the guide dims itself instead */}
+      <div className={guide ? "absolute inset-0" : "absolute inset-0 backdrop-blur-[4px]"} style={{ background: guide ? "transparent" : "rgba(67,67,67,0.65)" }} onClick={onClose} />
 
       {/* Panel */}
       <div className="absolute right-0 flex flex-col bg-white shadow-2xl" style={{ width: "42%", minWidth: 440, top: 15, bottom: 15, right: 15, borderRadius: 40, transform: slideOut ? "translateX(110%)" : "translateX(0)", transition: "transform 250ms ease" }}>
@@ -623,6 +683,16 @@ function AskPanel({ onClose, onStartGuide, slideOut = false }: AskPanelProps) {
         {/* Chat body */}
         <div className="flex-1 overflow-y-auto flex flex-col" style={{ paddingTop: 6, paddingRight: 24, paddingBottom: 6, paddingLeft: 24, rowGap: 13, columnGap: 20 }}>
 
+          {/* Where the clinician is in the guide */}
+          {guide && (
+            <div className="flex items-center gap-2 self-start" style={{ background: "#F0F5F6", borderRadius: 100, padding: "6px 12px", marginTop: 6 }}>
+              <span aria-hidden="true" className="size-1.5 rounded-full" style={{ background: "#007A8B" }} />
+              <span style={{ fontFamily: SF, fontSize: 13, color: "#434343" }}>
+                <span style={{ fontWeight: 600 }}>Guiding:</span> {guide.label}
+              </span>
+            </div>
+          )}
+
           {phase === "idle" && (
             <>
               {/* Gradient heading */}
@@ -650,6 +720,7 @@ function AskPanel({ onClose, onStartGuide, slideOut = false }: AskPanelProps) {
 
               {/* Suggestion pills */}
               <div className="flex flex-col" style={{ gap: "8px 12px" }}>
+                {guide && <GuideChip back label="Back to guide" onClick={() => guide.onChip({ label: "Back to guide", action: { type: "back" } })} />}
                 {suggestions.map((q, i) => (
                   <button
                     key={i}
@@ -696,7 +767,7 @@ function AskPanel({ onClose, onStartGuide, slideOut = false }: AskPanelProps) {
               <div className="flex justify-end">
                 <div className="rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]" style={{ background: GRADIENT }}>
                   <p className="text-white text-[15px]" style={{ fontFamily: SF, fontWeight: 500 }}>
-                    How do I perform ARA Assessment?
+                    {guide ? guideUser : "How do I perform ARA Assessment?"}
                   </p>
                 </div>
               </div>
@@ -723,13 +794,52 @@ function AskPanel({ onClose, onStartGuide, slideOut = false }: AskPanelProps) {
             </>
           )}
 
-          {phase === "answered" && (
+          {phase === "answered" && guide && guideReply && (
+            <>
+              <div className="flex justify-end">
+                <div className="rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]" style={{ background: GRADIENT }}>
+                  <p className="text-white text-[15px]" style={{ fontFamily: SF, fontWeight: 500 }}>{guideUser}</p>
+                </div>
+              </div>
+              <div ref={replyRef} tabIndex={-1} className="flex flex-col gap-3 outline-none" aria-label="ACPlus AI reply">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-full flex items-center justify-center shrink-0" style={{ background: GRADIENT }}>
+                    <img alt="" className="size-4" src={imgIcon} />
+                  </div>
+                  <p className="text-[#434343] text-[14px] font-semibold" style={{ fontFamily: SF }}>ACPlus AI</p>
+                </div>
+                <div className="ml-9 flex flex-col gap-3">
+                  {guideReply.blocks.map((b, i) =>
+                    b.kind === "p" ? (
+                      <p key={i} className="text-[#434343] text-[14px] leading-relaxed" style={{ fontFamily: SF }}>{richText(b.text)}</p>
+                    ) : b.kind === "ul" ? (
+                      <ul key={i} className="flex flex-col gap-1 pl-5 list-disc text-[#434343] text-[14px] leading-relaxed" style={{ fontFamily: SF }}>
+                        {b.items.map((it, j) => <li key={j}>{richText(it)}</li>)}
+                      </ul>
+                    ) : (
+                      <ol key={i} className="flex flex-col gap-1 pl-5 list-decimal text-[#434343] text-[14px] leading-relaxed" style={{ fontFamily: SF }}>
+                        {b.items.map((it, j) => <li key={j}>{richText(it)}</li>)}
+                      </ol>
+                    ),
+                  )}
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {guideReply.chips.map(chip => (
+                      <GuideChip key={chip.label} label={chip.label} back={chip.action.type === "back" && chip.label === "Back to guide"}
+                        onClick={() => guide.onChip(chip)} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {phase === "answered" && !guide && (
             <>
               {/* User bubble */}
               <div className="flex justify-end">
                 <div className="rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]" style={{ background: GRADIENT }}>
                   <p className="text-white text-[15px]" style={{ fontFamily: SF, fontWeight: 500 }}>
-                    How do I perform ARA Assessment?
+                    {guide ? guideUser : "How do I perform ARA Assessment?"}
                   </p>
                 </div>
               </div>
@@ -2001,6 +2111,34 @@ export default function App() {
   const [guideDeviceSerial, setGuideDeviceSerial] = useState<string | undefined>();
   const [guideTestType, setGuideTestType] = useState<string | undefined>();
   const [testFromGuide, setTestFromGuide] = useState(false);
+  const [guideStep, setGuideStep] = useState<GuideStepState<SpirometryContext> | null>(null);
+  const [askVoice, setAskVoice] = useState<string | null>(null);
+  const guideRef = useRef<GuidedFlowHandle>(null);
+  const askFabRef = useRef<HTMLButtonElement>(null);
+
+  function closeAsk() {
+    setAskOpen(false);
+    setAskVoice(null);
+  }
+
+  // Quick-replies from the chat drive the paused guide once the panel is gone
+  function handleGuideChip(chip: ReplyChip) {
+    closeAsk();
+    if (chip.action.type === "command") {
+      const command = chip.action.command;
+      setTimeout(() => guideRef.current?.sendCommand(command), 60);
+    }
+  }
+
+  const handleVoiceSend = useCallback((transcript: string) => {
+    setAskVoice(transcript);
+    setAskOpen(true);
+  }, []);
+  const askFabRect = useCallback(() => askFabRef.current?.getBoundingClientRect() ?? null, []);
+
+  const guideChatLabel = guideStep
+    ? `${guideStep.stepLabel}${guideStep.context.patient ? ` · ${guideStep.context.patient.name}` : ""}`
+    : "";
 
   function handleStartGuide() {
     setChatSlideOut(true);
@@ -2016,6 +2154,7 @@ export default function App() {
     setGuideDeviceSerial(device?.serial);
     setGuideTestType(test?.label);
     setGuideOpen(false);
+    setGuideStep(null);
     setTestFromGuide(true);
     setTestOpen(true);
   }
@@ -2174,38 +2313,48 @@ export default function App() {
         </section>
       </div>
 
-      {/* Ask button */}
-      {!guideOpen && (
-        <div className="fixed bottom-6 right-6 z-40">
-          <div className="relative">
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 blur-[10px] h-[30px] w-[110px] rounded-full opacity-70" style={{ backgroundImage: GRADIENT }} />
-            <button
-              className="relative h-[56px] w-[130px] rounded-full flex items-center gap-2.5 px-4 overflow-hidden hover:opacity-90 transition-opacity"
-              style={{ backgroundImage: GRADIENT }}
-              onClick={() => setAskOpen(true)}
-            >
-              <img alt="" className="size-[28px] shrink-0" src={imgIcon} />
-              <p className="text-white text-[18px] font-medium mr-3" style={{ fontFamily: SF }}>Ask!</p>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Ask button — stays above the guide overlay so the assistant is always reachable */}
+      <div className="fixed transition-opacity duration-200" style={{ right: 36, bottom: 24, width: 155, height: 66, zIndex: guideOpen ? 70 : 40, opacity: guideOpen && askOpen ? 0.4 : 1 }}>
+        <div aria-hidden="true" className="absolute" style={{ left: 20, top: 31, width: 114, height: 35, borderRadius: 22, filter: "blur(11.7px)", backgroundImage: "linear-gradient(162.9deg, #007A8B 0%, #3AAF4D 37%, #A8CB38 85.6%)" }} />
+        <button
+          ref={askFabRef}
+          className="absolute flex items-center hover:opacity-90 transition-opacity"
+          style={{ left: 5, bottom: 2, width: 146, height: 64, borderRadius: 50, backgroundImage: "linear-gradient(156.3deg, #007A8B 0%, #3AAF4D 37%, #A8CB38 85.6%)", pointerEvents: askOpen ? "none" : undefined }}
+          aria-disabled={askOpen || undefined}
+          tabIndex={askOpen ? -1 : undefined}
+          aria-label="Ask the assistant"
+          onClick={() => setAskOpen(true)}
+        >
+          <img alt="" className="absolute" style={{ left: 25, top: 14, width: 36, height: 36 }} src={imgIcon} />
+          <span className="absolute text-white text-[24px] font-medium" style={{ left: 67, top: 17, lineHeight: "29px", fontFamily: SF }}>Ask!</span>
+        </button>
+      </div>
 
       {/* GuidedFlow wizard */}
       {guideOpen && (
         <GuidedFlow
+          ref={guideRef}
           flow={spirometryFlow}
-          onClose={() => setGuideOpen(false)}
+          onClose={() => { setGuideOpen(false); setGuideStep(null); }}
           onStart={handleGuideStart}
+          paused={askOpen}
+          onStepChange={setGuideStep}
+          voice={{ scriptFor: scriptedTranscript, onSend: handleVoiceSend, target: askFabRect }}
         />
       )}
 
       {/* Ask panel */}
       {askOpen && (
         <AskPanel
-          onClose={() => setAskOpen(false)}
+          onClose={closeAsk}
           onStartGuide={handleStartGuide}
           slideOut={chatSlideOut}
+          guide={guideOpen && guideStep ? {
+            label: guideChatLabel,
+            reply: text => resolveReply(guideStep.stepId, text),
+            onChip: handleGuideChip,
+            voiceMessage: askVoice ?? undefined,
+          } : undefined}
         />
       )}
 

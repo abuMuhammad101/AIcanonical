@@ -48,6 +48,19 @@ export const M = {
   proceedPulse: 1.2, // one way, A → B (and back, yoyo)
   proceedPulseHold: 0.15, // rest at each end of the pulse
 
+  // Voice
+  micSlide: 0.25,
+  micSlideEase: "power2.inOut",
+  micSlideDistance: 60, // tick sits this far right of the mic inside the clipped circle
+  voiceScriptDelay: 0.7, // "Listening…" before the scripted transcript starts typing
+  voiceTypeChar: 0.03,
+  voiceCancelWindow: 2, // tapping ✓ with nothing heard inside this window cancels instead
+  voiceMissedHold: 2,
+  voiceFly: 0.4,
+
+  // Theme crossfade
+  themeFade: 0.2,
+
   // Dialog
   dialog: 0.2,
   dialogScale: 0.95,

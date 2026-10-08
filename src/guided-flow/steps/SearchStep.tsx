@@ -41,6 +41,7 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
   const [query, setQuery] = useState("");
   const [term, setTerm] = useState("");
   const [active, setActive] = useState(0);
+  const [keyNav, setKeyNav] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const timer = useRef<number>(undefined);
@@ -83,6 +84,7 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
 
   function onKeyDown(e: KeyboardEvent) {
     if (!results.length) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") setKeyNav(true);
     if (e.key === "ArrowDown") { e.preventDefault(); setActive(a => Math.min(a + 1, results.length - 1)); }
     if (e.key === "ArrowUp") { e.preventDefault(); setActive(a => Math.max(a - 1, 0)); }
     if (e.key === "Enter") { e.preventDefault(); pick(results[active]); }
@@ -92,7 +94,7 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
     <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center"
       style={{ top: "min(270px, 24vh)", width: 800, maxWidth: "calc(100vw - 32px)" }}>
 
-      <label className="gf-glass gf-pill w-full flex items-center gap-4" style={{ height: 100, padding: "0 36px" }}>
+      <label className="gf-surface gf-search gf-pill w-full flex items-center gap-4" style={{ height: 100, padding: "0 36px" }}>
         <span className="gf-muted shrink-0"><SearchIcon size={30} /></span>
         <input
           autoFocus
@@ -108,7 +110,7 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
           aria-activedescendant={results[active] ? `gf-opt-${getKey(results[active])}` : undefined}
           disabled={selected !== null}
           className="flex-1 min-w-0 bg-transparent text-[26px] outline-none border-none"
-          style={{ color: "var(--gf-text)", boxShadow: "none" }}
+          style={{ color: "inherit", boxShadow: "none" }}
         />
       </label>
 
@@ -132,7 +134,7 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
               tabIndex={-1}
               onClick={() => pick(item)}
               onMouseEnter={() => selected === null && setActive(i)}
-              className={`gf-glass gf-pill flex items-center gap-5 text-left ${isSel ? "gf-selected" : ""}`}
+              className={`gf-item gf-pill flex items-center gap-5 text-left ${isSel ? "gf-selected" : ""}`}
               style={{
                 width: isSel ? PILL_W_SELECTED : PILL_W,
                 maxWidth: "100%",
@@ -143,16 +145,12 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
                 transition: selected
                   ? `width ${M.select}s ease, height ${M.select}s ease, opacity ${M.select}s ease, background-color ${M.select}s ease`
                   : undefined,
-                outline: selected === null && i === active && term ? "1px solid var(--gf-text)" : "none",
+                outline: keyNav && selected === null && i === active && term ? "2px solid var(--gf-fg)" : "none",
                 outlineOffset: -1,
               }}
             >
-              <span className="rounded-full flex items-center justify-center shrink-0 text-[20px] font-medium"
-                style={{
-                  width: 64, height: 64,
-                  background: isSel ? "rgba(0,0,0,0.07)" : "var(--gf-selected-bg)",
-                  color: "var(--gf-selected-text)",
-                }}>
+              <span className="gf-avatar rounded-full flex items-center justify-center shrink-0 text-[20px] font-medium"
+                style={{ width: 64, height: 64 }}>
                 {p.getInitials(item)}
               </span>
               <span className="flex-1 min-w-0 flex flex-col gap-1">

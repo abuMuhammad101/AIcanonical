@@ -1,37 +1,20 @@
-/* ── Guided Flow: tokens + glass classes ───────────────────────────────────
-   Every visual value of the overlay lives here. Re-skin by overriding --gf-*.
-   Over a white host screen, white glass text is ≈ 4:1 and muted ≈ 3.3:1 with
-   these values: AA for large/bold text only. Darken --gf-scrim to raise it. */
+/* ── Guided Flow: themed tokens + glass classes ────────────────────────────
+   Every visual value of the overlay lives here, per theme. Components never
+   branch on theme; they use the classes and variables below.
+
+   Three families of glass:
+     surface  — controls: search field, dock, device bubbles, choice cards,
+                review tiles, picker tiles and panels, transcript bubble
+     item     — list items: search result pills
+     selected — the chosen item/surface
+   Each family sets --gf-fg / --gf-fg-muted for the text inside it. */
 
 .gf-root {
-  --gf-scrim: rgba(32, 32, 32, 0.66);
-  --gf-host-blur: 16px;
-  --gf-glass-bg: rgba(255, 255, 255, 0.14);
-  --gf-glass-bg-hover: rgba(255, 255, 255, 0.24);
-  --gf-glass-border: rgba(255, 255, 255, 0.55);
-  --gf-glass-blur: 16px;
-  --gf-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0 12px rgba(255, 255, 255, 0.15);
-  --gf-text: #fff;
-  --gf-text-muted: rgba(255, 255, 255, 0.85);
-  --gf-selected-bg: #fff;
-  --gf-selected-text: #1a1a1a;
-  --gf-selected-pressed: #e4e4e4;
+  --gf-font: system-ui, -apple-system, sans-serif;
   --gf-radius-card: 22px;
   --gf-radius-pill: 9999px;
-  --gf-proceed-icon: #434343;
-  --gf-proceed-border: rgba(255, 255, 255, 0.7);
-  /* Proceed rings: white discs with a soft white glow below (Figma "glow" layers) */
-  --gf-ring-inner-bg: rgba(255, 255, 255, 0.2);
-  --gf-ring-inner-glow: 0 17px 71px rgba(255, 255, 255, 0.1);
-  --gf-ring-outer-bg: rgba(255, 255, 255, 0.1);
-  --gf-ring-outer-glow: 0 20px 83px rgba(255, 255, 255, 0.05);
-  --gf-font: system-ui, -apple-system, sans-serif;
 
-  /* Extra darkening layers over the scrim */
-  --gf-dim-focus: rgba(0, 0, 0, 0.3);
-  --gf-dim-dialog: rgba(0, 0, 0, 0.2);
-
-  /* Exit dialog — the one opaque surface */
+  /* Exit dialog — the one opaque surface, same in both themes */
   --gf-dialog-bg: #fff;
   --gf-dialog-text: #1a1a1a;
   --gf-dialog-text-muted: #555;
@@ -41,47 +24,218 @@
   /* Status dots — the only colour allowed, and tiny */
   --gf-status-positive: #4ade80;
   --gf-status-warning: #fbbf24;
+
+  --gf-fg: var(--gf-on-scrim-text);
+  --gf-fg-muted: var(--gf-on-scrim-muted);
+  font-family: var(--gf-font);
+  color: var(--gf-fg);
+}
+
+/* ── Dark ─────────────────────────────────────────────────────────────────
+   Over a white host, white surface text ≈ 4:1, muted ≈ 3.3:1. */
+.gf-root[data-gf-theme="dark"] {
+  --gf-scrim: rgba(32, 32, 32, 0.66);
+  --gf-host-blur: 16px;
+  --gf-on-scrim-text: #fff;
+  --gf-on-scrim-muted: rgba(255, 255, 255, 0.85);
+
+  --gf-surface-bg: rgba(255, 255, 255, 0.14);
+  --gf-surface-bg-hover: rgba(255, 255, 255, 0.24);
+  --gf-surface-border-width: 1px;
+  --gf-surface-border-color: rgba(255, 255, 255, 0.55);
+  --gf-surface-blur: 16px;
+  --gf-surface-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0 12px rgba(255, 255, 255, 0.15);
+  --gf-surface-text: #fff;
+  --gf-surface-text-muted: rgba(255, 255, 255, 0.85);
+
+  --gf-search-bg: var(--gf-surface-bg);
+  --gf-search-border-width: 1px;
+  --gf-search-border-color: var(--gf-surface-border-color);
+  --gf-search-blur: var(--gf-surface-blur);
+
+  --gf-item-bg: var(--gf-surface-bg);
+  --gf-item-bg-hover: var(--gf-surface-bg-hover);
+  --gf-item-border-width: 1px;
+  --gf-item-border-color: var(--gf-surface-border-color);
+  --gf-item-blur: var(--gf-surface-blur);
+  --gf-item-shadow: var(--gf-surface-shadow);
+  --gf-item-text: #fff;
+  --gf-item-text-muted: rgba(255, 255, 255, 0.85);
+  --gf-item-avatar-bg: #fff;
+  --gf-item-avatar-text: #1a1a1a;
+
+  --gf-match-bg: #fff;
+  --gf-match-text: #1a1a1a;
+
+  --gf-selected-bg: #fff;
+  --gf-selected-border-color: rgba(255, 255, 255, 0.55);
+  --gf-selected-text: #1a1a1a;
+  --gf-selected-text-muted: rgba(26, 26, 26, 0.7);
+  --gf-selected-avatar-bg: rgba(0, 0, 0, 0.07);
+  --gf-selected-avatar-text: #1a1a1a;
+
+  --gf-proceed-bg: #fff;
+  --gf-proceed-bg-pressed: #e4e4e4;
+  --gf-proceed-icon: #434343;
+  --gf-proceed-border: rgba(255, 255, 255, 0.7);
+  --gf-proceed-shadow: none;
+  --gf-ring-inner-bg: rgba(255, 255, 255, 0.2);
+  --gf-ring-inner-glow: 0 17px 71px rgba(255, 255, 255, 0.1);
+  --gf-ring-outer-bg: rgba(255, 255, 255, 0.1);
+  --gf-ring-outer-glow: 0 20px 83px rgba(255, 255, 255, 0.05);
+
+  --gf-radar-ring: rgba(255, 255, 255, 0.55);
+  --gf-mic-ring: rgba(255, 255, 255, 0.35);
   --gf-status-neutral: rgba(255, 255, 255, 0.6);
 
+  --gf-picker-scrim: rgba(0, 0, 0, 0.3);
+  --gf-dim-dialog: rgba(0, 0, 0, 0.2);
+  --gf-dim-paused: rgba(0, 0, 0, 0.18);
   --gf-focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.9);
+}
 
-  font-family: var(--gf-font);
-  color: var(--gf-text);
+/* ── Light (Figma "AI-assistant-canoncial-light") ─────────────────────────
+   Host stays readable in outline; controls are charcoal glass, list items
+   are pale grey pills with a wide white rim. */
+.gf-root[data-gf-theme="light"] {
+  --gf-scrim: rgba(255, 255, 255, 0.3);
+  --gf-host-blur: 5px;
+  --gf-on-scrim-text: #434343;
+  --gf-on-scrim-muted: #58595c;
+
+  --gf-surface-bg: rgba(67, 67, 67, 0.7);
+  --gf-surface-bg-hover: rgba(67, 67, 67, 0.8);
+  --gf-surface-border-width: 1px;
+  --gf-surface-border-color: rgba(255, 255, 255, 0.6);
+  --gf-surface-blur: 16px;
+  --gf-surface-shadow: 0 10px 60px rgba(255, 255, 255, 0.2);
+  --gf-surface-text: #fff;
+  --gf-surface-text-muted: rgba(255, 255, 255, 0.82);
+
+  --gf-search-bg: rgba(67, 67, 67, 0.65);
+  --gf-search-border-width: 3px;
+  --gf-search-border-color: rgba(255, 255, 255, 0.8);
+  --gf-search-blur: 20px;
+
+  --gf-item-bg: rgba(204, 204, 204, 0.8);
+  --gf-item-bg-hover: rgba(192, 192, 192, 0.85);
+  --gf-item-border-width: 10px;
+  --gf-item-border-color: rgba(255, 255, 255, 0.6);
+  --gf-item-blur: 3px;
+  --gf-item-shadow: none;
+  --gf-item-text: #434343;
+  --gf-item-text-muted: #6e6f72;
+  --gf-item-avatar-bg: #6e6f72;
+  --gf-item-avatar-text: #fff;
+
+  --gf-match-bg: #ececec;
+  --gf-match-text: #434343;
+
+  --gf-selected-bg: rgba(58, 58, 58, 0.8);
+  --gf-selected-border-color: rgba(255, 255, 255, 0.6);
+  --gf-selected-text: #fff;
+  --gf-selected-text-muted: rgba(255, 255, 255, 0.82);
+  --gf-selected-avatar-bg: #ececec;
+  --gf-selected-avatar-text: #434343;
+
+  --gf-proceed-bg: rgba(67, 67, 67, 0.85);
+  --gf-proceed-bg-pressed: rgba(45, 45, 45, 0.9);
+  --gf-proceed-icon: #fff;
+  --gf-proceed-border: rgba(255, 255, 255, 0.6);
+  --gf-proceed-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --gf-ring-inner-bg: transparent;
+  --gf-ring-inner-glow: none;
+  --gf-ring-outer-bg: transparent;
+  --gf-ring-outer-glow: none;
+
+  --gf-radar-ring: rgba(67, 67, 67, 0.35);
+  --gf-mic-ring: rgba(67, 67, 67, 0.3);
+  --gf-status-neutral: #8b8c8e;
+
+  --gf-picker-scrim: rgba(163, 163, 163, 0.97);
+  --gf-dim-dialog: rgba(0, 0, 0, 0.2);
+  --gf-dim-paused: rgba(0, 0, 0, 0.12);
+  --gf-focus-ring: 0 0 0 3px #434343;
+}
+
+/* Theme crossfade: briefly transition colour properties only (GSAP owns
+   opacity and transform). */
+.gf-root.gf-theme-switching,
+.gf-root.gf-theme-switching * {
+  transition-property: background-color, border-color, color, box-shadow !important;
+  transition-duration: 0.2s !important;
+  transition-timing-function: ease !important;
 }
 
 .gf-scrim {
   background: var(--gf-scrim);
 }
 
-.gf-glass {
-  background: var(--gf-glass-bg);
-  border: 1px solid var(--gf-glass-border);
-  box-shadow: var(--gf-glass-shadow);
-  -webkit-backdrop-filter: blur(var(--gf-glass-blur));
-  backdrop-filter: blur(var(--gf-glass-blur));
-  color: var(--gf-text);
+/* ── Glass families ─────────────────────────────────────────────────────── */
+.gf-surface,
+.gf-item {
   /* No opacity transition here: GSAP owns opacity on glass elements. */
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-button.gf-glass:not(:disabled):hover,
-.gf-glass.gf-hoverable:hover {
-  background: var(--gf-glass-bg-hover);
+.gf-surface {
+  --gf-fg: var(--gf-surface-text);
+  --gf-fg-muted: var(--gf-surface-text-muted);
+  background: var(--gf-surface-bg);
+  border: var(--gf-surface-border-width) solid var(--gf-surface-border-color);
+  box-shadow: var(--gf-surface-shadow);
+  -webkit-backdrop-filter: blur(var(--gf-surface-blur));
+  backdrop-filter: blur(var(--gf-surface-blur));
+  color: var(--gf-fg);
+}
+.gf-surface.gf-search {
+  background: var(--gf-search-bg);
+  border-width: var(--gf-search-border-width);
+  border-color: var(--gf-search-border-color);
+  -webkit-backdrop-filter: blur(var(--gf-search-blur));
+  backdrop-filter: blur(var(--gf-search-blur));
+}
+
+.gf-item {
+  --gf-fg: var(--gf-item-text);
+  --gf-fg-muted: var(--gf-item-text-muted);
+  --gf-avatar-bg: var(--gf-item-avatar-bg);
+  --gf-avatar-text: var(--gf-item-avatar-text);
+  background: var(--gf-item-bg);
+  border: var(--gf-item-border-width) solid var(--gf-item-border-color);
+  box-shadow: var(--gf-item-shadow);
+  -webkit-backdrop-filter: blur(var(--gf-item-blur));
+  backdrop-filter: blur(var(--gf-item-blur));
+  color: var(--gf-fg);
+}
+
+button.gf-surface:not(:disabled):hover {
+  background: var(--gf-surface-bg-hover);
+}
+button.gf-item:not(:disabled):hover {
+  background: var(--gf-item-bg-hover);
 }
 
 .gf-selected,
-button.gf-glass.gf-selected:hover {
+button.gf-surface.gf-selected:hover,
+button.gf-item.gf-selected:hover {
+  --gf-fg: var(--gf-selected-text);
+  --gf-fg-muted: var(--gf-selected-text-muted);
+  --gf-avatar-bg: var(--gf-selected-avatar-bg);
+  --gf-avatar-text: var(--gf-selected-avatar-text);
   background: var(--gf-selected-bg);
-  color: var(--gf-selected-text);
+  border-color: var(--gf-selected-border-color);
+  color: var(--gf-fg);
   transform: scale(1.04);
 }
 
 .gf-muted {
-  color: var(--gf-text-muted);
+  color: var(--gf-fg-muted);
 }
-.gf-selected .gf-muted {
-  color: var(--gf-selected-text);
-  opacity: 0.7;
+
+.gf-avatar {
+  background: var(--gf-avatar-bg);
+  color: var(--gf-avatar-text);
 }
 
 .gf-card {
@@ -93,43 +247,45 @@ button.gf-glass.gf-selected:hover {
 
 /* Matched characters in search results */
 .gf-match {
-  background: var(--gf-selected-bg);
-  color: var(--gf-selected-text);
+  background: var(--gf-match-bg);
+  color: var(--gf-match-text);
   border-radius: 3px;
   padding: 0 1px;
 }
 .gf-selected .gf-match {
   background: transparent;
+  color: inherit;
   padding: 0;
 }
 
 .gf-root input::placeholder {
-  color: var(--gf-text-muted);
+  color: var(--gf-fg-muted);
 }
 
 .gf-root :focus-visible {
   outline: none;
   box-shadow: var(--gf-focus-ring);
 }
-.gf-root .gf-glass:focus-visible {
-  box-shadow: var(--gf-glass-shadow), var(--gf-focus-ring);
+.gf-root .gf-surface:focus-visible {
+  box-shadow: var(--gf-surface-shadow), var(--gf-focus-ring);
 }
 .gf-root .gf-dialog :focus-visible {
   box-shadow: inset 0 0 0 2px var(--gf-dialog-text);
 }
 
-/* Proceed button */
+/* ── Proceed ────────────────────────────────────────────────────────────── */
 .gf-proceed {
-  background: var(--gf-selected-bg);
+  background: var(--gf-proceed-bg);
   color: var(--gf-proceed-icon);
   border: 1.75px solid var(--gf-proceed-border);
+  box-shadow: var(--gf-proceed-shadow);
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
   transition: transform 0.12s ease, background-color 0.12s ease, opacity 0.15s ease;
 }
 .gf-proceed:active:not(:disabled) {
   transform: scale(0.92);
-  background: var(--gf-selected-pressed);
+  background: var(--gf-proceed-bg-pressed);
 }
 .gf-proceed-ring {
   position: absolute;
@@ -146,6 +302,34 @@ button.gf-glass.gf-selected:hover {
 .gf-proceed-ring-outer {
   background: var(--gf-ring-outer-bg);
   box-shadow: var(--gf-ring-outer-glow);
+}
+
+/* ── Mic ────────────────────────────────────────────────────────────────── */
+.gf-mic-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  border: 2px solid var(--gf-mic-ring);
+  pointer-events: none;
+}
+
+/* ── A/B theme switcher — a test control, deliberately not themed ─────── */
+.gf-ab {
+  font: 600 12px/1 var(--gf-font);
+  color: #333;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px dashed #8b8c8e;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.gf-ab [role="radio"] {
+  color: #333;
+}
+.gf-ab [role="radio"][aria-checked="true"] {
+  background: #333;
+  color: #fff;
+}
+.gf-ab :focus-visible {
+  box-shadow: 0 0 0 2px #333;
 }
 
 .gf-no-scroll {

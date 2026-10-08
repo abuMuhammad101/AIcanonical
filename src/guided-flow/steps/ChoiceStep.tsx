@@ -16,7 +16,7 @@ export interface ChoiceStepProps<C extends object> extends StepApi<C> {
 }
 
 export default function ChoiceStep<C extends object>(p: ChoiceStepProps<C>) {
-  const { options, reducedMotion: rm } = p;
+  const { options, reducedMotion: rm, setCommandHandler } = p;
   const [selected, setSelected] = useState<string | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const timer = useRef<number>(undefined);
@@ -36,6 +36,19 @@ export default function ChoiceStep<C extends object>(p: ChoiceStepProps<C>) {
     timer.current = window.setTimeout(() => p.complete(p.toContext(o)), ms(M.select + M.selectHold));
   }
 
+  // External "choose" (e.g. the assistant's Choose … chip)
+  const pickRef = useRef(pick);
+  pickRef.current = pick;
+  useEffect(() => {
+    setCommandHandler(cmd => {
+      const option = cmd.type === "choose" ? options.find(o => o.id === cmd.value) : undefined;
+      if (!option) return false;
+      pickRef.current(option);
+      return true;
+    });
+    return () => setCommandHandler(null);
+  }, [setCommandHandler, options]);
+
   return (
     <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: 120, paddingBottom: 160 }}>
       <div ref={rowRef} role="radiogroup" className="flex flex-wrap justify-center" style={{ gap: 36 }}>
@@ -47,7 +60,7 @@ export default function ChoiceStep<C extends object>(p: ChoiceStepProps<C>) {
               role="radio"
               aria-checked={isSel}
               onClick={() => pick(o)}
-              className={`gf-glass gf-card relative flex flex-col items-start text-left ${isSel ? "gf-selected" : "hover:scale-105 active:scale-105"}`}
+              className={`gf-surface gf-card relative flex flex-col items-start text-left ${isSel ? "gf-selected" : "hover:scale-105 active:scale-105"}`}
               style={{
                 width: 400, minHeight: 212, padding: "34px 64px 30px 34px", gap: 14,
                 opacity: selected && !isSel ? M.dimOpacity : 1,
