@@ -141,11 +141,12 @@
   --gf-proceed-bg-pressed: rgba(45, 45, 45, 0.9);
   --gf-proceed-icon: #fff;
   --gf-proceed-border: rgba(255, 255, 255, 0.6);
-  --gf-proceed-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  --gf-ring-inner-bg: transparent;
-  --gf-ring-inner-glow: none;
-  --gf-ring-outer-bg: transparent;
-  --gf-ring-outer-glow: none;
+  --gf-proceed-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  /* On white the rings are charcoal veils, mirroring the dark theme's white ones */
+  --gf-ring-inner-bg: rgba(67, 67, 67, 0.22);
+  --gf-ring-inner-glow: 0 12px 40px rgba(67, 67, 67, 0.14);
+  --gf-ring-outer-bg: rgba(67, 67, 67, 0.1);
+  --gf-ring-outer-glow: 0 14px 48px rgba(67, 67, 67, 0.08);
 
   --gf-radar-ring: rgba(67, 67, 67, 0.35);
   --gf-status-neutral: #8b8c8e;

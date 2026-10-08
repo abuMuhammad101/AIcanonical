@@ -30,9 +30,14 @@ const TILE_W = 220;
 const TILE_H = 146;
 const GAP = 20;
 // Proceed button and its rings at their largest (Figma state B)
-const PROCEED = 120;
-const RING_INNER = 170;
-const RING_OUTER = 200;
+// Figma start-button states (A / Variant3 / B), scaled to 0.8 of the frame.
+const SCALE = 0.8;
+const PROCEED = 120 * SCALE; // A: button at rest
+const PROCEED_MID = 130 * SCALE; // Variant3
+const PROCEED_PEAK = 140 * SCALE; // B
+const RING_INNER = 170 * SCALE; // B
+const RING_OUTER_MID = 150 * SCALE; // Variant3
+const RING_OUTER = 200 * SCALE; // B
 
 function Picker({ field, values, onConfirm, flipId }: { field: ReviewField; values: Values; onConfirm: (p: Values) => void; flipId: string }) {
   const spec = field.picker;
@@ -74,16 +79,16 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
   // Proceed pulse: three circles breathing through the Figma states
   //   A        button 120, rings tucked behind it
   //   Variant3 button 130, outer ring 150
-  //   B        button 140, inner ring 170, outer ring 200
+  //   B        button 140, inner ring 170, outer ring 200   (all × SCALE)
   useLayoutEffect(() => {
     const btn = pulseRef.current, inner = innerRingRef.current, outer = outerRingRef.current;
     if (!btn || !inner || !outer || !ready) return;
     const A = { btn: 1, inner: PROCEED / RING_INNER, outer: PROCEED / RING_OUTER };
     if (rm) {
       // Static Variant3
-      gsap.set(btn, { scale: 130 / PROCEED });
+      gsap.set(btn, { scale: PROCEED_MID / PROCEED });
       gsap.set(inner, { scale: A.inner });
-      gsap.set(outer, { scale: 150 / RING_OUTER });
+      gsap.set(outer, { scale: RING_OUTER_MID / RING_OUTER });
       return;
     }
     gsap.set(btn, { scale: A.btn });
@@ -91,9 +96,9 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
     gsap.set(outer, { scale: A.outer });
     // Built linear, then eased as a whole so it flows through Variant3 without a stop.
     const states = gsap.timeline({ paused: true, defaults: { ease: "none", duration: 1 } })
-      .to(btn, { scale: 130 / PROCEED }, 0)
-      .to(outer, { scale: 150 / RING_OUTER }, 0)
-      .to(btn, { scale: 140 / PROCEED }, 1)
+      .to(btn, { scale: PROCEED_MID / PROCEED }, 0)
+      .to(outer, { scale: RING_OUTER_MID / RING_OUTER }, 0)
+      .to(btn, { scale: PROCEED_PEAK / PROCEED }, 1)
       .to(outer, { scale: 1 }, 1)
       .to(inner, { scale: 1, duration: 0.9 }, 1.1);
     const driver = gsap.to(states, {
@@ -232,7 +237,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
             className={`relative rounded-full flex items-center justify-center ${ready && editing === null ? "gf-proceed" : "gf-surface"}`}
             style={{ width: PROCEED, height: PROCEED }}
           >
-            <ArrowUpRightIcon size={80} strokeWidth={0.9} />
+            <ArrowUpRightIcon size={80 * SCALE} strokeWidth={0.9} />
           </button>
         </span>
       </div>
