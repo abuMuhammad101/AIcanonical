@@ -44,6 +44,7 @@
   --gf-surface-border-width: 1px;
   --gf-surface-border-color: rgba(255, 255, 255, 0.55);
   --gf-surface-blur: 16px;
+  --gf-surface-saturate: 100%;
   --gf-surface-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0 12px rgba(255, 255, 255, 0.15);
   --gf-surface-text: #fff;
   --gf-surface-text-muted: rgba(255, 255, 255, 0.85);
@@ -102,19 +103,27 @@
   --gf-on-scrim-text: #434343;
   --gf-on-scrim-muted: #58595c;
 
-  --gf-surface-bg: rgba(67, 67, 67, 0.7);
-  --gf-surface-bg-hover: rgba(67, 67, 67, 0.8);
+  /* Frosted charcoal: a lit top-left fading to a deeper base, a bright top
+     edge, an inner shade at the bottom and a soft lifted shadow. The lightest
+     corner stays as dark as the old flat fill, so white text keeps ≈ 4:1. */
+  --gf-surface-bg: linear-gradient(150deg, rgba(84, 84, 84, 0.72) 0%, rgba(58, 58, 58, 0.76) 55%, rgba(36, 36, 36, 0.8) 100%);
+  --gf-surface-bg-hover: linear-gradient(150deg, rgba(94, 94, 94, 0.74) 0%, rgba(64, 64, 64, 0.78) 55%, rgba(44, 44, 44, 0.82) 100%);
   --gf-surface-border-width: 1px;
-  --gf-surface-border-color: rgba(255, 255, 255, 0.6);
-  --gf-surface-blur: 16px;
-  --gf-surface-shadow: 0 10px 60px rgba(255, 255, 255, 0.2);
+  --gf-surface-border-color: rgba(255, 255, 255, 0.45);
+  --gf-surface-blur: 28px;
+  --gf-surface-saturate: 180%;
+  --gf-surface-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -18px 30px -12px rgba(0, 0, 0, 0.22),
+    0 16px 36px -10px rgba(0, 0, 0, 0.28),
+    0 3px 10px rgba(0, 0, 0, 0.08);
   --gf-surface-text: #fff;
   --gf-surface-text-muted: rgba(255, 255, 255, 0.82);
 
-  --gf-search-bg: rgba(67, 67, 67, 0.65);
+  --gf-search-bg: linear-gradient(150deg, rgba(84, 84, 84, 0.66) 0%, rgba(40, 40, 40, 0.76) 100%);
   --gf-search-border-width: 3px;
   --gf-search-border-color: rgba(255, 255, 255, 0.8);
-  --gf-search-blur: 20px;
+  --gf-search-blur: 28px;
 
   --gf-item-bg: rgba(204, 204, 204, 0.8);
   --gf-item-bg-hover: rgba(192, 192, 192, 0.85);
@@ -130,18 +139,18 @@
   --gf-match-bg: #ececec;
   --gf-match-text: #434343;
 
-  --gf-selected-bg: rgba(58, 58, 58, 0.8);
+  --gf-selected-bg: linear-gradient(150deg, rgba(70, 70, 70, 0.86) 0%, rgba(28, 28, 28, 0.9) 100%);
   --gf-selected-border-color: rgba(255, 255, 255, 0.6);
   --gf-selected-text: #fff;
   --gf-selected-text-muted: rgba(255, 255, 255, 0.82);
   --gf-selected-avatar-bg: #ececec;
   --gf-selected-avatar-text: #434343;
 
-  --gf-proceed-bg: rgba(67, 67, 67, 0.85);
-  --gf-proceed-bg-pressed: rgba(45, 45, 45, 0.9);
+  --gf-proceed-bg: linear-gradient(150deg, rgba(84, 84, 84, 0.85) 0%, rgba(32, 32, 32, 0.92) 100%);
+  --gf-proceed-bg-pressed: linear-gradient(150deg, rgba(62, 62, 62, 0.9) 0%, rgba(22, 22, 22, 0.95) 100%);
   --gf-proceed-icon: #fff;
   --gf-proceed-border: rgba(255, 255, 255, 0.6);
-  --gf-proceed-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --gf-proceed-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38), 0 12px 28px -8px rgba(0, 0, 0, 0.3);
   /* On white the rings are charcoal veils, mirroring the dark theme's white ones */
   --gf-ring-inner-bg: rgba(67, 67, 67, 0.22);
   --gf-ring-inner-glow: 0 12px 40px rgba(67, 67, 67, 0.14);
@@ -183,16 +192,16 @@
   background: var(--gf-surface-bg);
   border: var(--gf-surface-border-width) solid var(--gf-surface-border-color);
   box-shadow: var(--gf-surface-shadow);
-  -webkit-backdrop-filter: blur(var(--gf-surface-blur));
-  backdrop-filter: blur(var(--gf-surface-blur));
+  -webkit-backdrop-filter: blur(var(--gf-surface-blur)) saturate(var(--gf-surface-saturate));
+  backdrop-filter: blur(var(--gf-surface-blur)) saturate(var(--gf-surface-saturate));
   color: var(--gf-fg);
 }
 .gf-surface.gf-search {
   background: var(--gf-search-bg);
   border-width: var(--gf-search-border-width);
   border-color: var(--gf-search-border-color);
-  -webkit-backdrop-filter: blur(var(--gf-search-blur));
-  backdrop-filter: blur(var(--gf-search-blur));
+  -webkit-backdrop-filter: blur(var(--gf-search-blur)) saturate(var(--gf-surface-saturate));
+  backdrop-filter: blur(var(--gf-search-blur)) saturate(var(--gf-surface-saturate));
 }
 
 .gf-item {
@@ -278,8 +287,8 @@ button.gf-item.gf-selected:hover {
   color: var(--gf-proceed-icon);
   border: 1.75px solid var(--gf-proceed-border);
   box-shadow: var(--gf-proceed-shadow);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px) saturate(var(--gf-surface-saturate));
+  backdrop-filter: blur(24px) saturate(var(--gf-surface-saturate));
   transition: transform 0.12s ease, background-color 0.12s ease, opacity 0.15s ease;
 }
 .gf-proceed:active:not(:disabled) {
