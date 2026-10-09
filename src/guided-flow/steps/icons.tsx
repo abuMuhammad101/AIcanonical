@@ -19,13 +19,14 @@ export const ResetIcon = ({ size = 24, strokeWidth = 1.8 }: IconProps) => (
   <svg {...base(size, strokeWidth)}><path d="M20 12a8 8 0 1 1-2.34-5.66" /><polyline points="20 4 20 9 15 9" /></svg>
 );
 
-/** Two chasing arrows: the standard "refresh" (distinct from Reset's single arrow). */
-export const RefreshIcon = ({ size = 20, strokeWidth = 1.8 }: IconProps) => (
+/** Signal waves around a dot: "look for nearby devices" (distinct from Reset). */
+export const SignalIcon = ({ size = 20, strokeWidth = 1.8 }: IconProps) => (
   <svg {...base(size, strokeWidth)}>
-    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-    <path d="M21 3v5h-5" />
-    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-    <path d="M8 16H3v5" />
+    <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+    <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5" />
+    <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
   </svg>
 );
 
