@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
 
+/**
+ * How the Brand backdrop sits behind a step: "intro" — sharp globe, heading
+ * low (a hero); "focus" — blurred globe, heading at the top; "scan" — globe and
+ * heading hidden while a scan animation owns the screen. Dark and Light ignore it.
+ */
+export type GuideScene = "intro" | "focus" | "scan";
+
 /** An instruction from outside the overlay (e.g. a chat quick-reply) to the current step. */
 export interface FlowCommand {
   type: string;
@@ -24,6 +31,8 @@ export interface StepApi<C extends object> {
   reducedMotion: boolean;
   /** No step follows this one: its action finishes the guide. */
   isLastStep: boolean;
+  /** Override the step's scene while it's on screen (e.g. search: intro until typing). */
+  setScene: (scene: GuideScene) => void;
 }
 
 export interface FlowStep<C extends object> {
@@ -34,6 +43,11 @@ export interface FlowStep<C extends object> {
   prompt: string;
   /** Context keys this step fills. A step whose keys are all present is skipped. */
   provides: (keyof C)[];
+  /** Brand mode's heading and subtitle above the step. */
+  heading?: string | ((context: Partial<C>) => string);
+  subtitle?: string | ((context: Partial<C>) => string);
+  /** Starting scene for Brand mode; defaults to "focus". */
+  scene?: GuideScene;
   render: (api: StepApi<C>) => ReactNode;
 }
 

@@ -61,6 +61,8 @@ const REVIEW_FIELDS: ReviewField[] = [
   },
 ];
 
+const firstName = (p?: Patient) => p?.name.split(" ")[0] ?? "Patient";
+
 function answersFrom(p?: Patient): Values {
   const { ft, inches } = splitHeight(p?.height);
   return {
@@ -77,12 +79,14 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
   id: "spirometry",
   label: "Spirometry assessment guide",
   steps: [
-    patientStep<SpirometryContext>(),
+    patientStep<SpirometryContext>({ heading: "Who are we assessing today?", subtitle: "Select a patient to assess" }),
     {
       id: "device",
       label: "Connect device",
       prompt: "select a device",
       provides: ["device"],
+      heading: "These nearby devices are found",
+      subtitle: "Select a device to connect",
       render: api => h(DiscoverStep<Device, SpirometryContext>, {
         ...api,
         scan: mockScan,
@@ -98,6 +102,8 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
       label: "Choose exercise",
       prompt: "choose an exercise",
       provides: ["test"],
+      heading: "Choose the test",
+      subtitle: "Select the protocol for this assessment",
       render: api => h(ChoiceStep<SpirometryContext>, {
         ...api,
         options: TEST_TYPES.map(t => ({ id: t.id, title: t.label, description: t.desc })),
@@ -109,6 +115,8 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
       label: "Review details",
       prompt: "review demographics",
       provides: ["answers"],
+      heading: ctx => `${firstName(ctx.patient)}’s demographics`,
+      subtitle: "Patient's demographics are pre-filled, review and edit if needed",
       render: api => h(ReviewStep<SpirometryContext>, {
         ...api,
         fields: REVIEW_FIELDS,

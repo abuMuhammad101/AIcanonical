@@ -12,16 +12,21 @@ const STATUS_TONE: Record<Patient["status"], StatusTone> = {
 };
 
 /** "Find patient": every Quick Connect flow begins here. */
-export function patientStep<C extends { patient?: Patient }>(): FlowStep<C> {
+export function patientStep<C extends { patient?: Patient }>(
+  copy: { heading: string; subtitle: string },
+): FlowStep<C> {
   return {
     id: "patient",
     label: "Find patient",
     prompt: "search for a patient",
     provides: ["patient"],
+    ...copy,
+    scene: "intro",
     render: api => h(SearchStep<Patient, C>, {
       ...api,
       items: PATIENTS,
       placeholder: "Search a patient to get started",
+      hint: "The patients you search will appear here.",
       noun: "patients",
       getKey: p => p.mrn,
       getTitle: p => p.name,

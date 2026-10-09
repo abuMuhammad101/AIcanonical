@@ -46,10 +46,13 @@ function useQrModules() {
 }
 
 export default function ScanStep<T, C extends object>(p: ScanStepProps<T, C>) {
-  const { scan, announce, reducedMotion: rm, noun, setCommandHandler } = p;
+  const { scan, announce, reducedMotion: rm, noun, setCommandHandler, setScene } = p;
   const [phase, setPhase] = useState<Phase>("scanning");
   const [item, setItem] = useState<T | null>(null);
   const qr = useQrModules();
+
+  // Brand: the viewfinder owns the screen until a code is read
+  useEffect(() => { setScene(phase === "found" ? "focus" : "scan"); }, [phase, setScene]);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const lineRef = useRef<HTMLSpanElement>(null);

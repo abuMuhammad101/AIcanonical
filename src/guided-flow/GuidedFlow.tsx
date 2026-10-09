@@ -4,9 +4,10 @@ import { useGSAP } from "@gsap/react";
 import { Flip } from "gsap/Flip";
 import "./guided-flow.css";
 import { M, ms } from "./motion";
-import type { FlowCommand, FlowConfig, StepApi } from "./flows/types";
+import type { FlowCommand, FlowConfig, GuideScene, StepApi } from "./flows/types";
+import BrandBackdrop from "./BrandBackdrop";
 import { CloseIcon, ResetIcon } from "./steps/icons";
-import ThemeSwitcher, { switcherEnabled, useGuideTheme } from "./ThemeSwitcher";
+import ThemeSwitcher, { nextTheme, switcherEnabled, useGuideTheme } from "./ThemeSwitcher";
 import { MicButton } from "./voice/VoiceControls";
 import { useVoice } from "./voice/useVoice";
 
@@ -77,6 +78,8 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const [showExit, setShowExit] = useState(false);
   const [liveMsg, setLiveMsg] = useState("");
   const [voiceMsg, setVoiceMsg] = useState("");
+  // Brand backdrop/heading arrangement; a step may override its default
+  const [sceneOverride, setSceneOverride] = useState<GuideScene | null>(null);
 
   const ctxRef = useRef(context);
   const indexRef = useRef(index);
@@ -95,6 +98,8 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const exitRef = useRef<HTMLDivElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
   const stepWrapRef = useRef<HTMLDivElement>(null);
+  const brandRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLDivElement>(null);
 
   const rm = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
 
@@ -131,10 +136,10 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     if (rm) {
       blur.current.px = full;
       applyBlur();
-      gsap.fromTo([scrim, stage, ...chrome], { opacity: 0 }, { opacity: 1, duration: M.overlayIn });
+      gsap.fromTo([scrim, brandRef.current, stage, ...chrome].filter(Boolean), { opacity: 0 }, { opacity: 1, duration: M.overlayIn });
     } else {
       const tl = gsap.timeline({ defaults: { duration: M.overlayIn, ease: M.overlayEase } });
-      tl.fromTo(scrim, { opacity: 0 }, { opacity: 1 }, 0)
+      tl.fromTo([scrim, brandRef.current].filter(Boolean), { opacity: 0 }, { opacity: 1 }, 0)
         .fromTo(blur.current, { px: 0 }, { px: full, onUpdate: applyBlur }, 0)
         .fromTo([stage, ...chrome], { opacity: 0, y: M.stageRise }, { opacity: 1, y: 0 }, 0.05);
     }
@@ -169,6 +174,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const clearStepChrome = () => {
     setDirty(false);
     setFocusMode(false);
+    setSceneOverride(null);
     escapeRef.current = null;
     commandRef.current = null;
   };
@@ -178,7 +184,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     const targets = [stageRef.current, dockRef.current, micRef.current].filter(Boolean);
     const tl = gsap.timeline({ onComplete: then, defaults: { duration: M.overlayOut, ease: "power2.inOut" } });
     tl.to(targets, { opacity: 0, duration: M.stepOut }, 0)
-      .to(scrimRef.current, { opacity: 0 }, 0);
+      .to([scrimRef.current, brandRef.current].filter(Boolean), { opacity: 0 }, 0);
     if (!rm) tl.to(blur.current, { px: 0, onUpdate: applyBlur }, 0);
   }, [rm, applyBlur]);
 
@@ -205,6 +211,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const announce = useCallback((msg: string) => setLiveMsg(msg), []);
   const setEscapeHandler = useCallback((fn: (() => void) | null) => { escapeRef.current = fn; }, []);
   const setCommandHandler = useCallback((fn: ((c: FlowCommand) => boolean) | null) => { commandRef.current = fn; }, []);
+  const setScene = useCallback((s: GuideScene) => setSceneOverride(s), []);
 
   const api: StepApi<C> = useMemo(() => ({
     context: context as C,
@@ -216,13 +223,19 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     setCommandHandler,
     reducedMotion: rm,
     isLastStep: index === steps.length - 1,
-  }), [context, complete, announce, setEscapeHandler, setCommandHandler, rm, index, steps.length]);
+    setScene,
+  }), [context, complete, announce, setEscapeHandler, setCommandHandler, rm, index, steps.length, setScene]);
 
   useImperativeHandle(ref, () => ({
     sendCommand: command => commandRef.current?.(command) ?? false,
   }), []);
 
   const step = steps[index];
+  const scene = sceneOverride ?? step.scene ?? "focus";
+  const brand = theme === "brand";
+  const text = (v: typeof step.heading) => (typeof v === "function" ? v(context) : v);
+  const heading = text(step.heading);
+  const subtitle = text(step.subtitle);
 
   useEffect(() => {
     onStepChange?.({ stepId: step.id, stepLabel: step.label, context });
@@ -293,7 +306,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     const view = exitRef.current, step = stepWrapRef.current;
     if (!view || exitShown.current === showExit) return;
     exitShown.current = showExit;
-    const chrome = [dockRef.current, micRef.current].filter(Boolean);
+    const chrome = [dockRef.current, micRef.current, headingRef.current].filter(Boolean);
     const out = rm ? { autoAlpha: 0 } : { autoAlpha: 0, scale: M.stepScale, y: -M.stepRise / 2 };
     const settle = rm ? { autoAlpha: 1 } : { autoAlpha: 1, scale: 1, y: 0 };
     const tl = gsap.timeline({ defaults: { overwrite: "auto" } });
@@ -316,7 +329,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       if (paused) return;
       const typing = e.target instanceof HTMLElement && e.target.matches("input,textarea,[contenteditable]");
       if ((e.key === "t" || e.key === "T") && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        setTheme(theme === "dark" ? "light" : "dark");
+        setTheme(nextTheme(theme));
         return;
       }
       if (e.key === "Escape") {
@@ -345,11 +358,12 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
 
   return (
     <div ref={rootRef} role="dialog" aria-modal={!paused} aria-label={flow.label}
-      data-gf-theme={theme} inert={paused}
+      data-gf-theme={theme} data-gf-scene={scene} inert={paused}
       className="gf-root fixed inset-0 z-50 overflow-hidden select-none">
 
       {/* Scrim — blurs the host screen; taps do nothing */}
       <div ref={scrimRef} className="gf-scrim absolute inset-0" style={{ opacity: 0 }} aria-hidden="true" />
+      {brand && <BrandBackdrop ref={brandRef} reducedMotion={rm} />}
       <div className="absolute inset-0 pointer-events-none transition-opacity duration-200"
         style={{ background: "var(--gf-picker-scrim)", backdropFilter: "blur(var(--gf-picker-blur))", WebkitBackdropFilter: "blur(var(--gf-picker-blur))", opacity: focusMode || showExit ? 1 : 0 }} aria-hidden="true" />
 
@@ -360,7 +374,16 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
 
       {/* Stage — the current step renders and swaps in place */}
       <div ref={stageRef} tabIndex={-1} className="absolute inset-0 outline-none" style={{ opacity: 0 }}>
-        <div key={`${step.id}:${resetKey}`} ref={stepWrapRef} className="absolute inset-0" aria-hidden={showExit || undefined}>
+        {/* Brand: heading, subtitle and separator above the step */}
+        {brand && heading && (
+          <div ref={headingRef} className="gf-brand-heading" aria-hidden={showExit || undefined}
+            style={{ opacity: focusMode ? 0.25 : undefined }}>
+            <h2 className="gf-brand-title">{heading}</h2>
+            {subtitle && <p className="gf-brand-subtitle">{subtitle}</p>}
+            <span className="gf-brand-separator" aria-hidden="true" />
+          </div>
+        )}
+        <div key={`${step.id}:${resetKey}`} ref={stepWrapRef} className="gf-step-wrap absolute inset-0" aria-hidden={showExit || undefined}>
           {step.render(api)}
         </div>
       </div>

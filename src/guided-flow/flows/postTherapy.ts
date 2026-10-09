@@ -125,12 +125,15 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
   id: "post-therapy",
   label: "Post therapy documentation guide",
   steps: [
-    patientStep<PostTherapyContext>(),
+    patientStep<PostTherapyContext>({ heading: "Whose session are we documenting?", subtitle: "Select the patient who used the device" }),
     {
       id: "scan",
       label: "Scan device",
       prompt: "scan the QR code on the therapy device",
       provides: ["session"],
+      heading: "Confirm the device session",
+      subtitle: "Check the device and patient before continuing",
+      scene: "scan",
       render: api => h(ScanStep<TherapySession, PostTherapyContext>, {
         ...api,
         scan: mockQrScan,
@@ -146,6 +149,8 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
       label: "Device data",
       prompt: "review the treatment records from the device",
       provides: ["clinicianRecords"],
+      heading: ctx => `What ${ctx.session?.device ?? "the device"} recorded`,
+      subtitle: "Review the treatment records sent by the device",
       render: api => h(ReviewStep<PostTherapyContext>, {
         ...api,
         fields: recordFields(api.context.session!),
@@ -160,6 +165,8 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
       label: "Therapy setting",
       prompt: "choose the therapy setting",
       provides: ["setting"],
+      heading: "How was the session delivered?",
+      subtitle: "Choose the therapy setting",
       render: api => h(ChoiceStep<PostTherapyContext>, {
         ...api,
         options: THERAPY_SETTINGS.map(t => ({ id: t.id, title: t.label, description: t.desc })),
@@ -172,6 +179,8 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
       label: "Treatment details",
       prompt: "add skilled time and treatment location",
       provides: ["treatment"],
+      heading: "Treatment details",
+      subtitle: "Set skilled time and location, and add any placement notes",
       render: api => h(ReviewStep<PostTherapyContext>, {
         ...api,
         fields: treatmentFields(api.context.session!),
@@ -194,6 +203,8 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
       label: "Scales",
       prompt: "record the pain and Borg scales",
       provides: ["scales"],
+      heading: "Record the scales",
+      subtitle: "Optional: add the pain and Borg scales for this session",
       render: api => h(ReviewStep<PostTherapyContext>, {
         ...api,
         fields: [scaleField("pain"), scaleField("borg")],
@@ -207,6 +218,8 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
       label: "Note info",
       prompt: "confirm the note date, time and type",
       provides: ["noteInfo"],
+      heading: "Almost done",
+      subtitle: "Confirm the note date, time and type",
       render: api => h(ReviewStep<PostTherapyContext>, {
         ...api,
         fields: NOTE_FIELDS,

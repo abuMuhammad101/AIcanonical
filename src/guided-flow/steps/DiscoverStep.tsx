@@ -21,7 +21,7 @@ const BUBBLE = 200;
 const slotX = (i: number, n: number) => (i - (n - 1) / 2) * (BUBBLE + M.bubbleGap);
 
 export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T, C>) {
-  const { scan, getKey, announce, reducedMotion: rm, noun, setCommandHandler } = p;
+  const { scan, getKey, announce, reducedMotion: rm, noun, setCommandHandler, setScene } = p;
   const [phase, setPhase] = useState<Phase>("scanning");
   const [items, setItems] = useState<T[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -35,6 +35,10 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
   const emptyTimer = useRef<number>(undefined);
   const holdTimer = useRef<number>(undefined);
   const prevCount = useRef(0);
+
+  // Brand: the radar owns the screen while scanning; heading and globe return with results
+  const scanning0 = phase === "scanning" || phase === "merging";
+  useEffect(() => { setScene(scanning0 ? "scan" : "focus"); }, [scanning0, setScene]);
 
   // ── Scan lifecycle ──────────────────────────────────────────────────────────
   const startScan = useCallback(() => {
