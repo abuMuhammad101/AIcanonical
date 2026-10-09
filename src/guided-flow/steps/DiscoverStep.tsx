@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { gsap } from "gsap";
 import { M, ms } from "../motion";
 import type { StepApi } from "../flows/types";
-import { SignalIcon } from "./icons";
+import { RefreshIcon } from "./icons";
 
 export interface DiscoverStepProps<T, C extends object> extends StepApi<C> {
   /** Starts a scan. Calls onFound per discovery and onDone when finished; returns a cancel function. */
@@ -254,7 +254,7 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
         {(phase === "done" || phase === "empty" || (phase === "merging" && items.length > 0)) && selected === null && (
           <button ref={scanAgainRef} onClick={scanAgain} aria-label={`Refresh ${noun}s`}
             className="flex items-center gap-2 text-[18px] font-semibold px-4 rounded-full" style={{ minHeight: 44, opacity: 0 }}>
-            <SignalIcon size={20} />
+            <RefreshIcon size={20} />
             Refresh
           </button>
         )}
