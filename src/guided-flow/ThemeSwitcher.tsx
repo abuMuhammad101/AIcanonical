@@ -43,8 +43,7 @@ export default function ThemeSwitcher({ theme, onChange }: { theme: GuideTheme; 
   return (
     <div role="radiogroup" aria-label="Overlay theme (A/B test)" onKeyDown={onKeyDown}
       className="gf-ab absolute flex items-center gap-1 rounded-full"
-      style={{ top: 20, left: 24, height: 32, padding: "0 4px 0 10px" }}>
-      <span aria-hidden="true" style={{ opacity: 0.6, marginRight: 4 }}>A/B</span>
+      style={{ top: 20, left: 24, height: 32, padding: "0 4px" }}>
       {THEMES.map(t => (
         <button key={t} type="button" role="radio" data-theme={t}
           aria-checked={theme === t} tabIndex={theme === t ? 0 : -1}

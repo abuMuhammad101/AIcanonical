@@ -107,7 +107,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
       repeat: -1, yoyo: true, repeatDelay: M.proceedPulseHold,
     });
     return () => { driver.kill(); states.kill(); };
-  }, [ready, rm]);
+  }, [ready, rm, editing]); // rings unmount while a picker is open
 
   function capture() {
     const el = surfaceRef.current;

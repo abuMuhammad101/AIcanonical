@@ -27,7 +27,8 @@ export function useVoice({ script, onSend, announce }: Options) {
     setListening(true);
     announce("Listening");
     speech.start({ script: text, onText: () => {} });
-    mic.start(text.length * ms(M.voiceTypeChar));
+    // Scripted level pattern runs at least 2.5s so the wave has time to show off
+    mic.start(Math.max(2500, text.length * ms(M.voiceTypeChar)));
   }, [script, announce, speech, mic]);
 
   const collapse = useCallback((then?: () => void) => {

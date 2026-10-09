@@ -54,9 +54,11 @@ export const M = {
   proceedPulseHold: 0.15, // rest at each end of the pulse
 
   // Voice — the Speak button morphs circle ↔ pill
-  micPillWidth: 140,
-  micExpand: 0.25,
+  micPillWidth: 176,
+  micExpand: 0.48,
   micExpandEase: "power2.out",
+  micPopEase: "back.out(1.8)", // springy overshoot when the pill opens
+  micTickEase: "back.out(2.6)",
   micCollapse: 0.3,
   micCollapseEase: "power2.inOut",
   micFadeReduced: 0.15,
@@ -68,9 +70,6 @@ export const M = {
   // Theme crossfade
   themeFade: 0.2,
 
-  // Dialog
-  dialog: 0.2,
-  dialogScale: 0.95,
 } as const;
 
 export const ms = (s: number) => Math.round(s * 1000);

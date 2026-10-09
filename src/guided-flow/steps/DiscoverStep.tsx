@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { gsap } from "gsap";
 import { M, ms } from "../motion";
 import type { StepApi } from "../flows/types";
-import { RefreshIcon } from "./icons";
+import { DeviceSearchIcon } from "./icons";
 
 export interface DiscoverStepProps<T, C extends object> extends StepApi<C> {
   /** Starts a scan. Calls onFound per discovery and onDone when finished; returns a cancel function. */
@@ -253,8 +253,8 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
         {phase === "empty" && <p className="text-[19px] mb-1">No {noun}s found</p>}
         {(phase === "done" || phase === "empty" || (phase === "merging" && items.length > 0)) && selected === null && (
           <button ref={scanAgainRef} onClick={scanAgain}
-            className="flex items-center gap-2 text-[26px] font-semibold px-4 rounded-full" style={{ minHeight: 48, opacity: 0, letterSpacing: "-0.78px" }}>
-            <RefreshIcon size={28} />
+            className="flex items-center gap-2 text-[18px] font-semibold px-4 rounded-full" style={{ minHeight: 44, opacity: 0 }}>
+            <DeviceSearchIcon size={20} />
             Scan Again
           </button>
         )}

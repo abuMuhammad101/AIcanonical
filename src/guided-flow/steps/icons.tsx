@@ -19,10 +19,12 @@ export const ResetIcon = ({ size = 24, strokeWidth = 1.8 }: IconProps) => (
   <svg {...base(size, strokeWidth)}><path d="M20 12a8 8 0 1 1-2.34-5.66" /><polyline points="20 4 20 9 15 9" /></svg>
 );
 
-export const RefreshIcon = ({ size = 22, strokeWidth = 1.6 }: IconProps) => (
+/** Bluetooth with signal arcs: "look for devices" (distinct from Reset). */
+export const DeviceSearchIcon = ({ size = 20, strokeWidth = 1.8 }: IconProps) => (
   <svg {...base(size, strokeWidth)}>
-    <path d="M20 11a8 8 0 0 0-14.7-4.4" /><polyline points="4 3 5 7 9 6" />
-    <path d="M4 13a8 8 0 0 0 14.7 4.4" /><polyline points="20 21 19 17 15 18" />
+    <path d="m7 7 10 10-5 5V2l5 5L7 17" />
+    <path d="M20.83 14.83a4 4 0 0 0 0-5.66" />
+    <path d="M18 12h.01" />
   </svg>
 );
 

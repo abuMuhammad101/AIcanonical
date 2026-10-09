@@ -92,8 +92,9 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const stageRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const micRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const exitRef = useRef<HTMLDivElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
+  const stepWrapRef = useRef<HTMLDivElement>(null);
 
   const rm = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
 
@@ -285,14 +286,28 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     fadeOut(onClose);
   }
 
-  // ── Exit dialog motion + focus ──────────────────────────────────────────────
+  // ── Exit confirmation: the step and controls give way to the question ──────
+  const exitShown = useRef(false);
   useLayoutEffect(() => {
-    if (!showExit || !dialogRef.current) return;
-    gsap.fromTo(dialogRef.current,
-      rm ? { opacity: 0 } : { opacity: 0, scale: M.dialogScale },
-      { opacity: 1, scale: 1, duration: M.dialog, ease: M.stepInEase });
-    continueRef.current?.focus({ preventScroll: true });
-  }, [showExit, rm]);
+    const view = exitRef.current, step = stepWrapRef.current;
+    if (!view || exitShown.current === showExit) return;
+    exitShown.current = showExit;
+    const chrome = [dockRef.current, micRef.current].filter(Boolean);
+    const out = rm ? { autoAlpha: 0 } : { autoAlpha: 0, scale: M.stepScale, y: -M.stepRise / 2 };
+    const settle = rm ? { autoAlpha: 1 } : { autoAlpha: 1, scale: 1, y: 0 };
+    const tl = gsap.timeline({ defaults: { overwrite: "auto" } });
+    if (showExit) {
+      tl.to([step, ...chrome], { ...out, duration: M.stepOut, ease: M.stepOutEase }, 0)
+        .fromTo(view, rm ? { autoAlpha: 0 } : { autoAlpha: 0, scale: M.stepScale, y: M.stepRise },
+          { ...settle, duration: M.stepIn, ease: M.stepInEase }, M.stepOut * 0.6)
+        .add(() => continueRef.current?.focus({ preventScroll: true }), M.stepOut * 0.6);
+    } else {
+      tl.to(view, { ...out, duration: M.stepOut, ease: M.stepOutEase }, 0)
+        .fromTo([step, ...chrome], rm ? { autoAlpha: 0 } : { autoAlpha: 0, scale: M.stepScale, y: M.stepRise },
+          { ...settle, duration: M.stepIn, ease: M.stepInEase }, M.stepOut * 0.6)
+        .add(focusFirst, M.stepOut * 0.6);
+    }
+  }, [showExit, rm, focusFirst]);
 
   // ── Keyboard: Escape + focus trap ───────────────────────────────────────────
   useEffect(() => {
@@ -305,14 +320,14 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       }
       if (e.key === "Escape") {
         e.preventDefault();
-        if (showExit) { setShowExit(false); focusFirst(); return; }
+        if (showExit) { setShowExit(false); return; }
         if (speak.listening) { cancelVoice(); return; }
         if (escapeRef.current) { escapeRef.current(); return; }
         requestClose();
         return;
       }
       if (e.key !== "Tab") return;
-      const scope = showExit ? dialogRef.current : rootRef.current;
+      const scope = showExit ? exitRef.current : rootRef.current;
       if (!scope) return;
       const focusable = Array.from(scope.querySelectorAll<HTMLElement>(FOCUSABLE))
         .filter(el => el.offsetParent !== null);
@@ -335,7 +350,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       {/* Scrim — blurs the host screen; taps do nothing */}
       <div ref={scrimRef} className="gf-scrim absolute inset-0" style={{ opacity: 0 }} aria-hidden="true" />
       <div className="absolute inset-0 pointer-events-none transition-opacity duration-200"
-        style={{ background: "var(--gf-picker-scrim)", backdropFilter: "blur(var(--gf-picker-blur))", WebkitBackdropFilter: "blur(var(--gf-picker-blur))", opacity: focusMode ? 1 : 0 }} aria-hidden="true" />
+        style={{ background: "var(--gf-picker-scrim)", backdropFilter: "blur(var(--gf-picker-blur))", WebkitBackdropFilter: "blur(var(--gf-picker-blur))", opacity: focusMode || showExit ? 1 : 0 }} aria-hidden="true" />
 
       {/* Announcements */}
       <p className="sr-only" aria-live="polite">{`Step ${index + 1} of ${steps.length}, ${step.prompt}`}</p>
@@ -344,7 +359,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
 
       {/* Stage — the current step renders and swaps in place */}
       <div ref={stageRef} tabIndex={-1} className="absolute inset-0 outline-none" style={{ opacity: 0 }}>
-        <div key={`${step.id}:${resetKey}`} className="absolute inset-0">
+        <div key={`${step.id}:${resetKey}`} ref={stepWrapRef} className="absolute inset-0" aria-hidden={showExit || undefined}>
           {step.render(api)}
         </div>
       </div>
@@ -395,40 +410,28 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
 
       {showSwitcher && <ThemeSwitcher theme={theme} onChange={setTheme} />}
 
-      {/* Exit dialog */}
-      {showExit && (
-        <>
-          <div className="absolute inset-0" style={{ background: "var(--gf-dim-dialog)" }} aria-hidden="true" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div ref={dialogRef} role="alertdialog" aria-modal="true"
-              aria-labelledby="gf-exit-title" aria-describedby="gf-exit-body"
-              className="gf-dialog flex flex-col overflow-hidden"
-              style={{ width: 400, borderRadius: 16, background: "var(--gf-dialog-bg)" }}>
-              <div className="flex flex-col items-center gap-2 text-center" style={{ padding: "28px 28px 24px" }}>
-                <h2 id="gf-exit-title" className="text-[19px] font-semibold" style={{ color: "var(--gf-dialog-text)" }}>
-                  Exit Guided Flow
-                </h2>
-                <p id="gf-exit-body" className="text-[15px] leading-snug" style={{ color: "var(--gf-dialog-text-muted)" }}>
-                  You have not completed the session yet. Are you sure you want to exit now?
-                </p>
-              </div>
-              <div className="flex" style={{ borderTop: "1px solid var(--gf-dialog-divider)" }}>
-                <button ref={continueRef} onClick={() => { setShowExit(false); focusFirst(); }}
-                  className="flex-1 h-14 text-[16px] font-semibold"
-                  style={{ color: "var(--gf-dialog-text)" }}>
-                  Continue Guide
-                </button>
-                <div style={{ width: 1, background: "var(--gf-dialog-divider)" }} />
-                <button onClick={exitConfirmed}
-                  className="flex-1 h-14 text-[16px] font-semibold"
-                  style={{ color: "var(--gf-danger)" }}>
-                  Exit Guide
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Exit confirmation, in the guide's own space (replaces the step) */}
+      <div ref={exitRef} role="alertdialog" aria-modal="true"
+        aria-labelledby="gf-exit-title" aria-describedby="gf-exit-body"
+        className="absolute inset-0 flex flex-col items-center justify-center text-center"
+        style={{ visibility: "hidden", opacity: 0, padding: "0 32px" }}>
+        <h2 id="gf-exit-title" className="text-[34px] font-bold" style={{ lineHeight: 1.2 }}>
+          Exit the guide?
+        </h2>
+        <p id="gf-exit-body" className="gf-muted text-[20px] leading-snug" style={{ marginTop: 12, maxWidth: 520 }}>
+          You haven&rsquo;t finished this session yet. If you exit now, your progress will be lost.
+        </p>
+        <div className="flex items-center" style={{ gap: 16, marginTop: 36 }}>
+          <button onClick={exitConfirmed}
+            className="gf-surface gf-dock gf-pill text-[18px] font-semibold" style={{ height: 60, padding: "0 32px", minWidth: 180 }}>
+            Exit guide
+          </button>
+          <button ref={continueRef} onClick={() => setShowExit(false)}
+            className="gf-surface gf-dock gf-pill gf-selected text-[18px] font-semibold" style={{ height: 60, padding: "0 32px", minWidth: 180, transform: "none" }}>
+            Continue guide
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

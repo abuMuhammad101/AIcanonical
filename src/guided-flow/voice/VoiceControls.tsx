@@ -1,20 +1,22 @@
 import { useLayoutEffect, useRef, type MouseEvent, type RefObject } from "react";
 import { gsap } from "gsap";
+import SiriWave from "siriwave";
 import { M } from "../motion";
 import micIcon from "../assets/mic.svg";
 import tickIcon from "../assets/tick.svg";
 
 const SIZE = 64;
+/** Waveform canvas inside the pill (left part; ✓ sits on the right). */
+const WAVE_W = 100;
+const WAVE_H = 48;
+/** Reduced motion: static bars instead of the live wave. */
 const BARS = 9;
-const BAR_MIN = 3;
-const BAR_MAX = 22;
-/** Middle bars run taller than the edges. */
 const PROFILE = [0.35, 0.55, 0.75, 0.9, 1, 0.9, 0.75, 0.55, 0.35];
 
 /**
- * Speak button. Idle: a 64px circle with the mic. Listening: morphs in place
- * into a pill with a live waveform on the left and ✓ on the right; the dock
- * stays centred, so Reset/Close slide with the width.
+ * Speak button. Idle: a 64px circle with the mic. Listening: pops open into a
+ * pill with a live Siri-style wave (SiriWave, iOS 9 curves) on the left and ✓
+ * on the right. The wave's amplitude and speed follow the mic level.
  */
 export function MicButton({ listening, level, shakeKey, label, onToggle, reducedMotion: rm }: {
   listening: boolean;
@@ -29,7 +31,6 @@ export function MicButton({ listening, level, shakeKey, label, onToggle, reduced
   const micRef = useRef<HTMLImageElement>(null);
   const waveRef = useRef<HTMLSpanElement>(null);
   const tickRef = useRef<HTMLImageElement>(null);
-  const barRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const mounted = useRef(false);
 
   // Morph circle ↔ pill
@@ -39,7 +40,6 @@ export function MicButton({ listening, level, shakeKey, label, onToggle, reduced
     const first = !mounted.current;
     mounted.current = true;
     const width = listening ? M.micPillWidth : SIZE;
-    const on = { opacity: 1, scale: 1, x: 0 };
 
     if (first) {
       gsap.set(btn, { width });
@@ -56,41 +56,56 @@ export function MicButton({ listening, level, shakeKey, label, onToggle, reduced
       return;
     }
     if (listening) {
-      const tl = gsap.timeline({ defaults: { duration: M.micExpand, ease: M.micExpandEase } });
-      tl.to(btn, { width }, 0)
-        .to(mic, { opacity: 0, scale: 0.6, duration: M.micExpand * 0.6 }, 0)
-        .fromTo(wave, { opacity: 0, scale: 0.6 }, on, 0.05)
-        .fromTo(tick, { opacity: 0, x: 10 }, on, 0.08);
+      // Pop open: a quick squash, then the pill springs to width
+      const tl = gsap.timeline();
+      tl.to(btn, { scale: 0.9, duration: 0.08, ease: "power2.out" }, 0)
+        .to(btn, { scale: 1, duration: M.micExpand, ease: M.micPopEase }, 0.08)
+        .to(btn, { width, duration: M.micExpand, ease: M.micPopEase }, 0.06)
+        .to(mic, { opacity: 0, scale: 0.4, duration: 0.14, ease: "power2.in" }, 0)
+        .fromTo(wave, { opacity: 0, scaleY: 0.2 }, { opacity: 1, scaleY: 1, duration: M.micExpand, ease: M.micPopEase }, 0.12)
+        .fromTo(tick, { opacity: 0, scale: 0.3, rotate: -30 }, { opacity: 1, scale: 1, rotate: 0, duration: M.micExpand, ease: M.micTickEase }, 0.18);
     } else {
       const tl = gsap.timeline({ defaults: { duration: M.micCollapse, ease: M.micCollapseEase } });
       tl.to(btn, { width }, 0)
-        .to(tick, { opacity: 0, x: 10, duration: M.micCollapse * 0.5 }, 0)
-        .to(wave, { opacity: 0, scale: 0.6, duration: M.micCollapse * 0.6 }, 0)
-        .fromTo(mic, { opacity: 0, scale: 0.6 }, on, M.micCollapse * 0.35);
+        .to(tick, { opacity: 0, scale: 0.5, duration: M.micCollapse * 0.5 }, 0)
+        .to(wave, { opacity: 0, scaleY: 0.2, duration: M.micCollapse * 0.6 }, 0)
+        .fromTo(mic, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, ease: M.micPopEase }, M.micCollapse * 0.35);
     }
   }, [listening, rm]);
 
-  // Waveform: bar heights follow the input level every frame
+  // Live wave while listening: amplitude and speed follow the input level
   useLayoutEffect(() => {
-    const bars = barRefs.current.filter(Boolean) as HTMLSpanElement[];
-    if (!listening) return;
-    if (rm) { bars.forEach(b => { b.style.height = `${(BAR_MIN + BAR_MAX) / 2}px`; }); return; }
-    const heights = bars.map(() => BAR_MIN);
-    const jitter = bars.map(() => 1);
-    let frame = 0;
+    const host = waveRef.current;
+    if (!listening || !host || rm) return;
+    const wave = new SiriWave({
+      container: host,
+      width: WAVE_W,
+      height: WAVE_H,
+      style: "ios9",
+      amplitude: 0.05,
+      speed: 0.12,
+      autostart: true,
+      // Monochrome: white and silver curves glow additively on the glass
+      curveDefinition: [
+        { color: "255,255,255", supportLine: true },
+        { color: "255,255,255" },
+        { color: "214,214,214" },
+        { color: "168,168,168" },
+      ],
+      globalCompositeOperation: "lighter",
+    });
+    let smooth = 0;
     const tick = () => {
       const lvl = level.current ?? 0;
-      if (frame++ % 6 === 0) for (let i = 0; i < jitter.length; i++) jitter[i] = 0.65 + Math.random() * 0.35;
-      bars.forEach((b, i) => {
-        const target = BAR_MIN + (BAR_MAX - BAR_MIN) * lvl * PROFILE[i] * jitter[i];
-        heights[i] += (target - heights[i]) * 0.35;
-        b.style.height = `${heights[i].toFixed(1)}px`;
-      });
+      smooth += (lvl - smooth) * 0.25;
+      wave.setAmplitude(0.05 + smooth * 1.6);
+      wave.setSpeed(0.12 + smooth * 0.18);
     };
     gsap.ticker.add(tick);
     return () => {
       gsap.ticker.remove(tick);
-      bars.forEach(b => { b.style.height = `${BAR_MIN}px`; });
+      wave.dispose();
+      host.replaceChildren();
     };
   }, [listening, rm, level]);
 
@@ -117,11 +132,10 @@ export function MicButton({ listening, level, shakeKey, label, onToggle, reduced
       <img ref={micRef} src={micIcon} alt="" width={32} height={32}
         className="absolute pointer-events-none" style={{ left: "50%", top: "50%", translate: "-50% -50%" }} />
       <span ref={waveRef} aria-hidden="true"
-        className="absolute flex items-center pointer-events-none"
-        style={{ left: 22, top: "50%", translate: "0 -50%", height: BAR_MAX, gap: 3, opacity: 0 }}>
-        {Array.from({ length: BARS }, (_, i) => (
-          <span key={i} ref={el => { barRefs.current[i] = el; }}
-            className="rounded-full" style={{ width: 2, height: BAR_MIN, background: "currentColor" }} />
+        className="absolute flex items-center justify-center gap-[3px] pointer-events-none"
+        style={{ left: 14, top: "50%", translate: "0 -50%", width: WAVE_W, height: WAVE_H, opacity: 0 }}>
+        {rm && Array.from({ length: BARS }, (_, i) => (
+          <span key={i} className="rounded-full" style={{ width: 2, height: 3 + 19 * 0.5 * PROFILE[i] + 4, background: "currentColor" }} />
         ))}
       </span>
       <img ref={tickRef} src={tickIcon} alt="" width={26} height={26}
