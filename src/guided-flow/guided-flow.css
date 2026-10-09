@@ -18,6 +18,14 @@
   --gf-status-positive: #4ade80;
   --gf-status-warning: #fbbf24;
 
+  /* Recording waveform colour sweep, left → right. Set all to one colour
+     (e.g. #fff) for a monochrome wave. */
+  --gf-wave-1: #18e3a0;
+  --gf-wave-2: #2f9bff;
+  --gf-wave-3: #b44dff;
+  --gf-wave-4: #ff2e8a;
+  --gf-wave-5: #ffb31f;
+
   --gf-fg: var(--gf-on-scrim-text);
   --gf-fg-muted: var(--gf-on-scrim-muted);
   font-family: var(--gf-font);

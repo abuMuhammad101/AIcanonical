@@ -1,22 +1,22 @@
 import { useLayoutEffect, useRef, type MouseEvent, type RefObject } from "react";
 import { gsap } from "gsap";
-import SiriWave from "siriwave";
+import { SpectrumWave } from "./SpectrumWave";
 import { M } from "../motion";
 import micIcon from "../assets/mic.svg";
 import tickIcon from "../assets/tick.svg";
 
 const SIZE = 64;
 /** Waveform canvas inside the pill (left part; ✓ sits on the right). */
-const WAVE_W = 100;
-const WAVE_H = 48;
+const WAVE_W = 104;
+const WAVE_H = 50;
 /** Reduced motion: static bars instead of the live wave. */
 const BARS = 9;
 const PROFILE = [0.35, 0.55, 0.75, 0.9, 1, 0.9, 0.75, 0.55, 0.35];
 
 /**
  * Speak button. Idle: a 64px circle with the mic. Listening: pops open into a
- * pill with a live Siri-style wave (SiriWave, iOS 9 curves) on the left and ✓
- * on the right. The wave's amplitude and speed follow the mic level.
+ * pill with a live glowing spectrum wave on the left and ✓ on the right. The
+ * wave follows the mic level; its colours come from the --gf-wave-* tokens.
  */
 export function MicButton({ listening, level, shakeKey, label, onToggle, reducedMotion: rm }: {
   listening: boolean;
@@ -62,50 +62,35 @@ export function MicButton({ listening, level, shakeKey, label, onToggle, reduced
         .to(btn, { scale: 1, duration: M.micExpand, ease: M.micPopEase }, 0.08)
         .to(btn, { width, duration: M.micExpand, ease: M.micPopEase }, 0.06)
         .to(mic, { opacity: 0, scale: 0.4, duration: 0.14, ease: "power2.in" }, 0)
-        .fromTo(wave, { opacity: 0, scaleY: 0.2 }, { opacity: 1, scaleY: 1, duration: M.micExpand, ease: M.micPopEase }, 0.12)
+        .fromTo(wave, { opacity: 0, scaleX: 0.3 }, { opacity: 1, scaleX: 1, duration: M.micExpand, ease: M.micPopEase }, 0.12)
         .fromTo(tick, { opacity: 0, scale: 0.3, rotate: -30 }, { opacity: 1, scale: 1, rotate: 0, duration: M.micExpand, ease: M.micTickEase }, 0.18);
     } else {
       const tl = gsap.timeline({ defaults: { duration: M.micCollapse, ease: M.micCollapseEase } });
       tl.to(btn, { width }, 0)
         .to(tick, { opacity: 0, scale: 0.5, duration: M.micCollapse * 0.5 }, 0)
-        .to(wave, { opacity: 0, scaleY: 0.2, duration: M.micCollapse * 0.6 }, 0)
+        .to(wave, { opacity: 0, scaleX: 0.3, duration: M.micCollapse * 0.6 }, 0)
         .fromTo(mic, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, ease: M.micPopEase }, M.micCollapse * 0.35);
     }
   }, [listening, rm]);
 
-  // Live wave while listening: amplitude and speed follow the input level
+  // Live spectrum wave while listening, fed by the input level
   useLayoutEffect(() => {
     const host = waveRef.current;
     if (!listening || !host || rm) return;
-    const wave = new SiriWave({
-      container: host,
-      width: WAVE_W,
-      height: WAVE_H,
-      style: "ios9",
-      amplitude: 0.05,
-      speed: 0.12,
-      autostart: true,
-      // Monochrome: white and silver curves glow additively on the glass
-      curveDefinition: [
-        { color: "255,255,255", supportLine: true },
-        { color: "255,255,255" },
-        { color: "214,214,214" },
-        { color: "168,168,168" },
-      ],
-      globalCompositeOperation: "lighter",
-    });
-    let smooth = 0;
-    const tick = () => {
-      const lvl = level.current ?? 0;
-      smooth += (lvl - smooth) * 0.25;
-      wave.setAmplitude(0.05 + smooth * 1.6);
-      wave.setSpeed(0.12 + smooth * 0.18);
-    };
-    gsap.ticker.add(tick);
+    const css = getComputedStyle(host);
+    const colors = [1, 2, 3, 4, 5]
+      .map(i => css.getPropertyValue(`--gf-wave-${i}`).trim())
+      .filter(Boolean);
+    const canvas = document.createElement("canvas");
+    host.appendChild(canvas);
+    const wave = new SpectrumWave(canvas, { width: WAVE_W, height: WAVE_H, colors: colors.length ? colors : ["#fff"] });
+    wave.start();
+    const feed = () => wave.setLevel(level.current ?? 0);
+    gsap.ticker.add(feed);
     return () => {
-      gsap.ticker.remove(tick);
-      wave.dispose();
-      host.replaceChildren();
+      gsap.ticker.remove(feed);
+      wave.stop();
+      canvas.remove();
     };
   }, [listening, rm, level]);
 
