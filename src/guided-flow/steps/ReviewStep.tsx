@@ -3,12 +3,14 @@ import { gsap } from "gsap";
 import { Flip } from "gsap/Flip";
 import { M } from "../motion";
 import type { StepApi } from "../flows/types";
-import { ArrowUpRightIcon, PencilIcon } from "./icons";
+import { ArrowUpRightIcon, LinkIcon, PencilIcon } from "./icons";
 import type { PickerSpec, Values } from "./pickers/shared";
 import OptionPicker from "./pickers/OptionPicker";
 import DatePicker from "./pickers/DatePicker";
 import NumberPicker from "./pickers/NumberPicker";
 import HeightPicker from "./pickers/HeightPicker";
+import TextPicker from "./pickers/TextPicker";
+import TimePicker from "./pickers/TimePicker";
 
 export interface ReviewField {
   id: string;
@@ -16,7 +18,8 @@ export interface ReviewField {
   required?: boolean;
   /** Tile value; "" means missing. */
   display: (values: Values) => string;
-  picker: PickerSpec;
+  /** Omitted: the value came from elsewhere (e.g. the device) and can't be edited here. */
+  picker?: PickerSpec;
 }
 
 export interface ReviewStepProps<C extends object> extends StepApi<C> {
@@ -24,11 +27,14 @@ export interface ReviewStepProps<C extends object> extends StepApi<C> {
   initialValues: (context: Readonly<C>) => Values;
   toContext: (values: Values) => Partial<C>;
   proceedLabel: string;
+  /** "compact" fits a 4 × 3 grid, for long read-outs like device records. */
+  density?: "regular" | "compact";
 }
 
-const TILE_W = 220;
-const TILE_H = 146;
-const GAP = 20;
+const GRID = {
+  regular: { cols: 3, w: 220, h: 146, gap: 20, pad: "12px 28px", value: 24, label: 18 },
+  compact: { cols: 4, w: 200, h: 112, gap: 16, pad: "10px 22px", value: 21, label: 15 },
+} as const;
 // Proceed button and its rings at their largest (Figma state B)
 // Figma start-button states (A / Variant3 / B). The light frames place it at
 // 92.73px (11784:15975), i.e. the 120px component at 0.7727.
@@ -42,16 +48,21 @@ const RING_OUTER = 200 * SCALE; // B
 
 function Picker({ field, values, onConfirm, flipId }: { field: ReviewField; values: Values; onConfirm: (p: Values) => void; flipId: string }) {
   const spec = field.picker;
+  if (!spec) return null;
   switch (spec.kind) {
     case "options": return <OptionPicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
     case "date": return <DatePicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
     case "number": return <NumberPicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
     case "height": return <HeightPicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
+    case "text": return <TextPicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
+    case "time": return <TimePicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
   }
 }
 
 export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
   const { fields, reducedMotion: rm, setFocusMode, setEscapeHandler, setCommandHandler, announce } = p;
+  const g = GRID[p.density ?? "regular"];
+  const rows = Math.ceil(fields.length / g.cols);
   const [values, setValues] = useState<Values>(() => p.initialValues(p.context));
   const [editing, setEditing] = useState<number | null>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -115,7 +126,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
   }
 
   function open(i: number) {
-    if (editing !== null || morphing.current) return;
+    if (editing !== null || morphing.current || !fields[i].picker) return;
     capture();
     returnFocus.current = i;
     setEditing(i);
@@ -170,7 +181,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
   openRef.current = open;
   useEffect(() => {
     setCommandHandler(cmd => {
-      const i = cmd.type === "edit" ? fields.findIndex(f => f.id === cmd.value) : -1;
+      const i = cmd.type === "edit" ? fields.findIndex(f => f.id === cmd.value && f.picker) : -1;
       if (i < 0) return false;
       openRef.current(i);
       return true;
@@ -188,11 +199,26 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
   return (
     <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: 120, paddingBottom: 120 }}>
       {/* Surface keeps the grid's footprint so pickers grow from where the tiles were */}
-      <div ref={surfaceRef} className="flex justify-center items-start" style={{ minHeight: TILE_H * 2 + GAP }}>
+      <div ref={surfaceRef} className="flex justify-center items-start" style={{ minHeight: g.h * rows + g.gap * (rows - 1) }}>
         {field === null ? (
-          <div className="grid" style={{ gridTemplateColumns: `repeat(3, ${TILE_W}px)`, gap: GAP }}>
+          <div className="grid" style={{ gridTemplateColumns: `repeat(${g.cols}, ${g.w}px)`, gap: g.gap }}>
             {fields.map((f, i) => {
               const v = f.display(values);
+              if (!f.picker) return (
+                // Read-only: no hover, no pencil; the link glyph marks it as device data
+                <div
+                  key={f.id}
+                  data-flip-id={`slot-${i}`}
+                  role="group"
+                  aria-label={`${f.label}: ${v || "not recorded"}, from device`}
+                  className="gf-surface gf-tile gf-card relative flex flex-col justify-center items-start text-left"
+                  style={{ width: g.w, height: g.h, padding: g.pad, gap: 8 }}
+                >
+                  <span className="absolute gf-muted" style={{ top: 10, right: 12 }}><LinkIcon size={16} strokeWidth={1.6} /></span>
+                  <span className={`font-bold leading-tight line-clamp-2 break-words tabular-nums ${v ? "" : "gf-muted"}`} style={{ fontSize: g.value }}>{v || "N/A"}</span>
+                  <span className="gf-muted leading-snug line-clamp-2" style={{ fontSize: g.label }}>{f.label}</span>
+                </div>
+              );
               return (
                 <button
                   key={f.id}
@@ -200,15 +226,15 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
                   onClick={() => open(i)}
                   aria-label={`${f.label}: ${v || "not set"}. Edit`}
                   className="gf-surface gf-tile gf-card relative flex flex-col justify-center items-start text-left"
-                  style={{ width: TILE_W, height: TILE_H, padding: "12px 28px", gap: 15 }}
+                  style={{ width: g.w, height: g.h, padding: g.pad, gap: p.density === "compact" ? 8 : 15 }}
                 >
-                  <span className="absolute" style={{ top: 12, right: 12 }}><PencilIcon size={20} strokeWidth={1.5} /></span>
+                  <span className="absolute" style={{ top: 12, right: 12 }}><PencilIcon size={p.density === "compact" ? 18 : 20} strokeWidth={1.5} /></span>
                   {v ? (
-                    <span className="text-[24px] font-bold leading-tight line-clamp-2 break-words">{v}</span>
+                    <span className="font-bold leading-tight line-clamp-2 break-words" style={{ fontSize: g.value }}>{v}</span>
                   ) : (
-                    <span className="text-[24px] font-bold leading-tight gf-muted">Add</span>
+                    <span className="font-bold leading-tight gf-muted" style={{ fontSize: g.value }}>Add</span>
                   )}
-                  <span className="gf-muted text-[18px]" style={{ lineHeight: "28px" }}>{f.label}</span>
+                  <span className="gf-muted leading-snug line-clamp-2" style={{ fontSize: g.label }}>{f.label}</span>
                 </button>
               );
             })}

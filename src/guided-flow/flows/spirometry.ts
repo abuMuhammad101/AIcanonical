@@ -1,11 +1,11 @@
 import { createElement as h } from "react";
 import type { FlowConfig } from "./types";
 import {
-  DEVICES, ETHNICITIES, PATIENTS, TEST_TYPES,
-  formatAdmission, heightToCm, splitHeight,
+  DEVICES, ETHNICITIES, TEST_TYPES,
+  heightToCm, splitHeight,
   type Answers, type Device, type Patient, type TestType,
 } from "../data";
-import SearchStep, { type StatusTone } from "../steps/SearchStep";
+import { patientStep } from "./shared";
 import DiscoverStep from "../steps/DiscoverStep";
 import ChoiceStep from "../steps/ChoiceStep";
 import ReviewStep, { type ReviewField } from "../steps/ReviewStep";
@@ -18,12 +18,6 @@ export interface SpirometryContext {
   test?: TestType;
   answers?: Answers;
 }
-
-const STATUS_TONE: Record<Patient["status"], StatusTone> = {
-  Active: "positive",
-  Pending: "warning",
-  Discharge: "neutral",
-};
 
 /** Mock Bluetooth scan. Add `?gfNoDevices` to the URL to see the empty state. */
 function mockScan(onFound: (d: Device) => void, onDone: () => void) {
@@ -83,25 +77,7 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
   id: "spirometry",
   label: "Spirometry assessment guide",
   steps: [
-    {
-      id: "patient",
-      label: "Find patient",
-      prompt: "search for a patient",
-      provides: ["patient"],
-      render: api => h(SearchStep<Patient, SpirometryContext>, {
-        ...api,
-        items: PATIENTS,
-        placeholder: "Search a patient to get started",
-        noun: "patients",
-        getKey: p => p.mrn,
-        getTitle: p => p.name,
-        getSubtitle: p => [p.gender ?? "—", `Admission Date: ${formatAdmission(p.admissionDate)}`],
-        getInitials: p => p.initials,
-        getStatus: p => ({ label: p.status, tone: STATUS_TONE[p.status] }),
-        matches: (p, q) => p.name.toLowerCase().includes(q.toLowerCase()) || p.mrn.toLowerCase().includes(q.toLowerCase()),
-        toContext: patient => ({ patient }),
-      }),
-    },
+    patientStep<SpirometryContext>(),
     {
       id: "device",
       label: "Connect device",

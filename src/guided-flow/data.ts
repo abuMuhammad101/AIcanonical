@@ -409,3 +409,107 @@ export function heightToCm(ft: string, inches: string): number {
   const i = parseFloat(inches) || 0;
   return Math.round((f * 12 + i) * 2.54);
 }
+
+// ─── QR device sessions (Quick Connect → Scan QR) ────────────────────────────
+
+/** One value the device reports. `id` is the key in the review values. */
+export interface DeviceRecord {
+  id: string;
+  label: string;
+  value: string;
+  /** Explanation behind the record's "?" on the documentation screen. */
+  info?: string;
+}
+
+/** A field the device can't measure, so the clinician fills it in the record step. */
+export interface ClinicianRecord {
+  id: string;
+  label: string;
+  input: { kind: "text"; placeholder: string } | { kind: "options"; options: string[] };
+}
+
+export interface TherapySession {
+  device: string;
+  serial: string;
+  mode: string;
+  /** When the device session ended, e.g. "10:42 AM". */
+  endedAt: string;
+  /** Minutes the device actually ran; seeds Skilled Time. */
+  runMinutes: number;
+  records: DeviceRecord[];
+  clinician: ClinicianRecord[];
+  /** Device-written interventions, appended to the generated note. */
+  narrative: string[];
+}
+
+export const THERAPY_SETTINGS = [
+  { id: "individual", label: "Individual", desc: "One clinician with one patient for the whole session." },
+  { id: "concurrent", label: "Concurrent", desc: "One clinician with two patients doing different activities." },
+  { id: "group", label: "Group", desc: "One clinician with two to six patients on the same activity." },
+  { id: "co_treatment", label: "Co-treatment", desc: "Two disciplines treating the patient together." },
+] as const;
+
+export type TherapySetting = (typeof THERAPY_SETTINGS)[number];
+
+export const NOTE_TYPES = ["Daily Note", "Progress Note", "Treatment Note", "Re-evaluation"];
+
+export const QR_SESSIONS: Record<string, TherapySession> = {
+  omniversa: {
+    device: "OmniVersa",
+    serial: "OV-2231-00418",
+    mode: "Pain Management",
+    endedAt: "10:42 AM",
+    runMinutes: 15,
+    records: [
+      { id: "location", label: "Location", value: "Right Shoulder" },
+      { id: "waveform", label: "Waveform", value: "Premodulated" },
+      { id: "intensity", label: "Intensity", value: "24 mA", info: "Peak current reached during the session, titrated to patient tolerance." },
+      { id: "frequency", label: "Frequency", value: "80 Hz" },
+      { id: "pulse", label: "Pulse width", value: "250 µs" },
+      { id: "channels", label: "Channels used", value: "2" },
+      { id: "painPre", label: "Pain before (NRS)", value: "7/10" },
+      { id: "painPost", label: "Pain after (NRS)", value: "4/10" },
+      { id: "flexion", label: "Post-stim flexion", value: "118°" },
+      { id: "abduction", label: "Post-stim abduction", value: "96°" },
+      { id: "runTime", label: "Device run time", value: "15 min 0 sec" },
+    ],
+    clinician: [
+      {
+        id: "response", label: "Patient response",
+        input: { kind: "options", options: ["Tolerated well", "Tolerated with rest breaks", "Reported discomfort", "Did not tolerate"] },
+      },
+    ],
+    narrative: [
+      "Patient received premodulated electrical stimulation to the Right Shoulder over 2 channels.",
+      "Intensity was titrated to patient tolerance; pain reduced from 7/10 to 4/10 NRS following stimulation.",
+    ],
+  },
+  omnicycle: {
+    device: "OmniCycle",
+    serial: "OC-1187-02293",
+    mode: "Neuro",
+    endedAt: "11:15 AM",
+    runMinutes: 10,
+    records: [
+      { id: "location", label: "Location", value: "Lower Extremity" },
+      { id: "activity", label: "Activity", value: "90%" },
+      { id: "activityLeft", label: "Activity left", value: "36%" },
+      { id: "activityRight", label: "Activity right", value: "64%" },
+      { id: "distance", label: "Distance", value: "0.2 mi" },
+      { id: "spasms", label: "Spasms", value: "" },
+      { id: "calories", label: "Calculated calories", value: "0 Cal", info: "Estimated from active work only; passive (motor-driven) rotation adds no calories." },
+      { id: "powerBegin", label: "Motor power begin", value: "", info: "Motor torque (Nm) at the start of the session; recorded in passive mode only." },
+      { id: "powerEnd", label: "Motor power end", value: "", info: "Motor torque (Nm) at the end of the session; recorded in passive mode only." },
+      { id: "runTime", label: "Device run time", value: "10 min 0 sec" },
+    ],
+    clinician: [
+      { id: "muscleSupport", label: "Muscle support", input: { kind: "text", placeholder: "e.g. Min assist, bilateral LE" } },
+    ],
+    narrative: [
+      "Patient engaged in active/resistive cycle ergometry to the Lower Extremity.",
+      "The patient was monitored during the therapy session and cycle parameters were adjusted based on the patient's response to the exercise. Two interventions occurred as follows:",
+      "First -> 00:00 Rotation (Forward) -> Resistance Level 0 -> RPM 10",
+      "Second -> 01:11 Rotation (Forward) -> Resistance Level 0 -> RPM 10",
+    ],
+  },
+};

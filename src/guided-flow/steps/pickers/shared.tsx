@@ -6,9 +6,12 @@ export type Values = Record<string, string>;
 /** How a review field is edited. Keys refer to entries in the review values. */
 export type PickerSpec =
   | { kind: "options"; key: string; options: string[]; layout: "tiles" | "list" }
-  | { kind: "date"; key: string }
-  | { kind: "number"; key: string; min: number; max: number; unit: string; label: string }
-  | { kind: "height"; ftKey: string; inKey: string };
+  /** Without a label it's a date of birth (shows age, 100 years back); with one, any date up to today. */
+  | { kind: "date"; key: string; label?: string }
+  | { kind: "number"; key: string; min: number; max: number; unit: string; label: string; step?: number }
+  | { kind: "height"; ftKey: string; inKey: string }
+  | { kind: "text"; key: string; label: string; placeholder?: string; multiline?: boolean; required?: boolean }
+  | { kind: "time"; key: string; label: string };
 
 export interface PickerProps<S extends PickerSpec> {
   spec: S;

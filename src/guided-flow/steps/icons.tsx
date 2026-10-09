@@ -38,6 +38,24 @@ export const PencilIcon = ({ size = 16, strokeWidth = 1.8 }: IconProps) => (
   <svg {...base(size, strokeWidth)}><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z" /></svg>
 );
 
+/** Chain link: "this value came from the connected device". */
+export const LinkIcon = ({ size = 16, strokeWidth = 1.8 }: IconProps) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1" />
+    <path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" />
+  </svg>
+);
+
+/** Rounded QR glyph for the scan step and the Quick Connect suggestion. */
+export const QrIcon = ({ size = 24, strokeWidth = 1.8 }: IconProps) => (
+  <svg {...base(size, strokeWidth)}>
+    <rect x="3.5" y="3.5" width="6" height="6" rx="1.2" />
+    <rect x="14.5" y="3.5" width="6" height="6" rx="1.2" />
+    <rect x="3.5" y="14.5" width="6" height="6" rx="1.2" />
+    <path d="M14.5 14.5h2.5v2.5M20.5 14.5v.01M14.5 20.5h.01M18 18h2.5v2.5h-3" />
+  </svg>
+);
+
 export const CheckIcon = ({ size = 24, strokeWidth = 2.2 }: IconProps) => (
   <svg {...base(size, strokeWidth)}><polyline points="20 6 9 17 4 12" /></svg>
 );
