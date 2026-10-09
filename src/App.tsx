@@ -3,7 +3,8 @@ import GuidedFlow, { type GuidedFlowHandle, type GuideStepState } from "./guided
 import { spirometryFlow, type SpirometryContext } from "./guided-flow/flows/spirometry";
 import { resolveReply, scriptedTranscript, type AssistantReply, type ReplyChip } from "./guided-flow/voiceScripts";
 
-const assetPathPrefix = "/assets";
+// Follows Vite's base URL so assets resolve when hosted under a sub-path (e.g. GitHub Pages).
+const assetPathPrefix = `${import.meta.env.BASE_URL}assets`;
 
 const imgGroup = `${assetPathPrefix}/09250.svg`;
 const imgGroup1 = `${assetPathPrefix}/a811c.svg`;
