@@ -152,7 +152,7 @@ const POST_THERAPY: Record<string, VoiceScript> = {
     reply: {
       blocks: [
         { kind: "p", text: "These values come straight from the device and can't be edited, so the note matches what the device recorded." },
-        { kind: "p", text: "**N/A** means the device didn't measure it in this mode. That's expected and won't block the note. Only the fields with a pencil are yours to fill." },
+        { kind: "p", text: "**N/A** means the device didn't measure it in this mode. That's expected and won't block the note. Anything the device couldn't record, like muscle support, you can tap to fill in." },
       ],
       chips: [BACK],
     },

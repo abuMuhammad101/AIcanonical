@@ -3,7 +3,7 @@ import { gsap } from "gsap";
 import { Flip } from "gsap/Flip";
 import { M } from "../motion";
 import type { StepApi } from "../flows/types";
-import { ArrowRightIcon, ArrowUpRightIcon, PencilIcon } from "./icons";
+import { ArrowRightIcon, ArrowUpRightIcon } from "./icons";
 import type { PickerSpec, Values } from "./pickers/shared";
 import OptionPicker from "./pickers/OptionPicker";
 import DatePicker from "./pickers/DatePicker";
@@ -217,7 +217,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
             {fields.map((f, i) => {
               const v = f.display(values);
               if (!f.picker) return (
-                // Read-only: no hover, no pencil
+                // Read-only: no hover, not a button
                 <div
                   key={f.id}
                   data-flip-id={`slot-${i}`}
@@ -239,7 +239,6 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
                   className="gf-surface gf-tile gf-card relative flex flex-col justify-center items-start text-left"
                   style={{ width: g.w, height: g.h, padding: g.pad, gap: p.density === "compact" ? 8 : 15 }}
                 >
-                  <span className="absolute" style={{ top: 12, right: 12 }}><PencilIcon size={p.density === "compact" ? 18 : 20} strokeWidth={1.5} /></span>
                   {v ? (
                     <span className="font-bold leading-tight line-clamp-2 break-words" style={{ fontSize: g.value }}>{v}</span>
                   ) : (
