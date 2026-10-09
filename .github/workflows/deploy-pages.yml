@@ -1,0 +1,54 @@
+# Rebuilds the prototype and republishes GitHub Pages on every push to main.
+# Pages serves the gh-pages branch; this workflow replaces its contents with
+# a fresh build each time.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # allows a manual re-run from the Actions tab
+
+permissions:
+  contents: write # to push the built site to gh-pages
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out (with LFS images)
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          # Served from https://<user>.github.io/<repo>/
+          FIGMA_PUBLIC_URL: /${{ github.event.repository.name }}
+
+      - name: Prepare for Pages
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "Publish ${{ github.sha }}"
