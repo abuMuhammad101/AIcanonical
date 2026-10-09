@@ -730,3 +730,53 @@ button.gf-item:not(:disabled):hover::before {
 .gf-root[data-gf-theme="brand"] .gf-choice {
   --_blur: 20px;
 }
+
+/* Brand "All set" (Figma 11635:14781) */
+.gf-brand-back,
+.gf-brand-cta {
+  border-radius: 12px;
+  padding: 6px 10px;
+  margin: -6px -10px; /* the padding only rounds the focus ring */
+}
+.gf-brand-finale {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 1000.641px;
+  max-width: calc(100vw - 64px);
+  font-size: 60px;
+  font-weight: 500;
+  line-height: 78px;
+  text-align: center;
+  text-wrap: balance;
+  background-image: linear-gradient(171.139deg, #007a8b 0%, #3aaf4d 37.007%, #a8cb38 85.572%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.gf-brand-back {
+  position: absolute;
+  left: 52.02px;
+  /* Figma 896 of 1024, raised 60px to clear the host's Ask!/Speak buttons */
+  top: calc(100% - 188px);
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.78px;
+  color: #fff;
+}
+.gf-brand-cta {
+  position: absolute;
+  right: 50px;
+  top: calc(100% - 194px); /* Figma 890, raised with Back */
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+}

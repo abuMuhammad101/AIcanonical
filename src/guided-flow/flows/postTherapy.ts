@@ -124,6 +124,10 @@ const today = () => {
 export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
   id: "post-therapy",
   label: "Post therapy documentation guide",
+  finale: {
+    message: ctx => `All set, ${ctx.patient?.name.split(" ")[0] ?? "the patient"}’s ${ctx.session?.device ?? "device"} session is ready to document.`,
+    action: "Open Documentation",
+  },
   steps: [
     patientStep<PostTherapyContext>({ heading: "Whose session are we documenting?", subtitle: "Select the patient who used the device" }),
     {
@@ -223,7 +227,8 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
       render: api => h(ReviewStep<PostTherapyContext>, {
         ...api,
         fields: NOTE_FIELDS,
-        initialValues: () => ({ date: today(), time: formatTime(new Date()), noteType: "Progress Note" }),
+        // Back from "All set" keeps the clinician's edits
+        initialValues: ctx => (ctx.noteInfo ? { ...ctx.noteInfo } : { date: today(), time: formatTime(new Date()), noteType: "Progress Note" }),
         toContext: v => ({ noteInfo: { date: v.date, time: v.time, noteType: v.noteType } }),
         proceedLabel: "Open documentation",
       }),

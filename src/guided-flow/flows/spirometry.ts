@@ -78,6 +78,10 @@ function answersFrom(p?: Patient): Values {
 export const spirometryFlow: FlowConfig<SpirometryContext> = {
   id: "spirometry",
   label: "Spirometry assessment guide",
+  finale: {
+    message: ctx => `All set, have ${firstName(ctx.patient)} seated upright with the nose clip on.`,
+    action: "Get Started",
+  },
   steps: [
     patientStep<SpirometryContext>({ heading: "Who are we assessing today?", subtitle: "Select a patient to assess" }),
     {
@@ -120,7 +124,8 @@ export const spirometryFlow: FlowConfig<SpirometryContext> = {
       render: api => h(ReviewStep<SpirometryContext>, {
         ...api,
         fields: REVIEW_FIELDS,
-        initialValues: ctx => answersFrom(ctx.patient),
+        // Back from "All set" keeps the clinician's edits
+        initialValues: ctx => (ctx.answers ? { ...ctx.answers } : answersFrom(ctx.patient)),
         toContext: v => ({
           answers: {
             gender: v.gender, dob: v.dob, weight: v.weight,

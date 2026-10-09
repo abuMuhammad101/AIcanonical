@@ -56,4 +56,12 @@ export interface FlowConfig<C extends object> {
   /** Accessible name of the overlay dialog. */
   label: string;
   steps: FlowStep<C>[];
+  /**
+   * Brand only: an "All set" screen after the last step. Its action hands off
+   * (onStart); Back returns to the last step.
+   */
+  finale?: {
+    message: (context: Partial<C>) => string;
+    action: string;
+  };
 }

@@ -6,7 +6,7 @@ import "./guided-flow.css";
 import { M, ms } from "./motion";
 import type { FlowCommand, FlowConfig, GuideScene, StepApi } from "./flows/types";
 import BrandBackdrop from "./BrandBackdrop";
-import { CloseIcon, ResetIcon } from "./steps/icons";
+import { ArrowUpRightIcon, ChevronIcon, CloseIcon, ResetIcon } from "./steps/icons";
 import ThemeSwitcher, { nextTheme, switcherEnabled, useGuideTheme } from "./ThemeSwitcher";
 import { MicButton } from "./voice/VoiceControls";
 import { useVoice } from "./voice/useVoice";
@@ -80,6 +80,8 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const [voiceMsg, setVoiceMsg] = useState("");
   // Brand backdrop/heading arrangement; a step may override its default
   const [sceneOverride, setSceneOverride] = useState<GuideScene | null>(null);
+  // Brand's "All set" screen, holding the completed context until handoff
+  const [finale, setFinale] = useState<Partial<C> | null>(null);
 
   const ctxRef = useRef(context);
   const indexRef = useRef(index);
@@ -88,6 +90,10 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const commandRef = useRef<((c: FlowCommand) => boolean) | null>(null);
   indexRef.current = index;
   const [theme, setTheme] = useGuideTheme();
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
+  // Brand ends on "All set" instead of handing off from the last step
+  const hasFinale = theme === "brand" && !!flow.finale;
   const showSwitcher = useMemo(switcherEnabled, []);
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -160,7 +166,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       onComplete: () => { busyRef.current = false; },
     });
     focusFirst();
-  }, [index, resetKey, rm, focusFirst]);
+  }, [index, resetKey, finale !== null, rm, focusFirst]);
 
   const stepOut = useCallback((then: () => void) => {
     const stage = stageRef.current;
@@ -201,12 +207,26 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     ctxRef.current = next;
     setContext(next);
     const ni = nextIndex(indexRef.current, next);
-    if (ni === -1) { finish(next); return; }
+    if (ni === -1) {
+      if (themeRef.current === "brand" && flow.finale) {
+        stepOut(() => { clearStepChrome(); setFinale(next); });
+        return;
+      }
+      finish(next);
+      return;
+    }
     stepOut(() => {
       clearStepChrome();
       setIndex(ni);
     });
-  }, [nextIndex, finish, stepOut]);
+  }, [nextIndex, finish, stepOut, flow.finale]);
+
+  // "All set" → back to the last step (its values come back from the context)
+  const leaveFinale = useCallback(() => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    stepOut(() => setFinale(null));
+  }, [stepOut]);
 
   const announce = useCallback((msg: string) => setLiveMsg(msg), []);
   const setEscapeHandler = useCallback((fn: (() => void) | null) => { escapeRef.current = fn; }, []);
@@ -222,16 +242,16 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     setEscapeHandler,
     setCommandHandler,
     reducedMotion: rm,
-    isLastStep: index === steps.length - 1,
+    isLastStep: index === steps.length - 1 && !hasFinale,
     setScene,
-  }), [context, complete, announce, setEscapeHandler, setCommandHandler, rm, index, steps.length, setScene]);
+  }), [context, complete, announce, setEscapeHandler, setCommandHandler, rm, index, steps.length, setScene, hasFinale]);
 
   useImperativeHandle(ref, () => ({
     sendCommand: command => commandRef.current?.(command) ?? false,
   }), []);
 
   const step = steps[index];
-  const scene = sceneOverride ?? step.scene ?? "focus";
+  const scene = finale ? "intro" : sceneOverride ?? step.scene ?? "focus";
   const brand = theme === "brand";
   const text = (v: typeof step.heading) => (typeof v === "function" ? v(context) : v);
   const heading = text(step.heading);
@@ -284,6 +304,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       setContext(initialRef.current);
       clearStepChrome();
       setLiveMsg("");
+      setFinale(null);
       setIndex(firstIndex);
       setResetKey(k => k + 1);
     });
@@ -375,7 +396,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       {/* Stage — the current step renders and swaps in place */}
       <div ref={stageRef} tabIndex={-1} className="absolute inset-0 outline-none" style={{ opacity: 0 }}>
         {/* Brand: heading, subtitle and separator above the step */}
-        {brand && heading && (
+        {brand && heading && !finale && (
           <div ref={headingRef} className="gf-brand-heading" aria-hidden={showExit || undefined}
             style={{ opacity: focusMode ? 0.25 : undefined }}>
             <h2 className="gf-brand-title">{heading}</h2>
@@ -383,9 +404,25 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
             <span className="gf-brand-separator" aria-hidden="true" />
           </div>
         )}
-        <div key={`${step.id}:${resetKey}`} ref={stepWrapRef} className="gf-step-wrap absolute inset-0" aria-hidden={showExit || undefined}>
-          {step.render(api)}
-        </div>
+        {finale && flow.finale ? (
+          // Brand "All set" (Figma 11635:14781)
+          <div ref={stepWrapRef} className="absolute inset-0" aria-hidden={showExit || undefined}>
+            <p className="gf-brand-finale" role="status">{flow.finale.message(finale)}</p>
+            {/* The action comes first so it takes focus */}
+            <button type="button" onClick={() => finish(finale)} className="gf-brand-cta">
+              {flow.finale.action}
+              <ArrowUpRightIcon size={40} strokeWidth={1.6} />
+            </button>
+            <button type="button" onClick={leaveFinale} className="gf-brand-back">
+              <ChevronIcon dir="left" size={28} strokeWidth={1.8} />
+              Back
+            </button>
+          </div>
+        ) : (
+          <div key={`${step.id}:${resetKey}`} ref={stepWrapRef} className="gf-step-wrap absolute inset-0" aria-hidden={showExit || undefined}>
+            {step.render(api)}
+          </div>
+        )}
       </div>
 
       {/* Dock */}
