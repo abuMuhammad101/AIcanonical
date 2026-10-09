@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write # to push the built site to gh-pages
+  pages: write # to request a Pages rebuild (pushes made with GITHUB_TOKEN don't trigger one)
 
 concurrency:
   group: pages
@@ -52,3 +53,10 @@ jobs:
           publish_branch: gh-pages
           force_orphan: true
           commit_message: "Publish ${{ github.sha }}"
+
+      - name: Request a Pages rebuild
+        run: |
+          curl --fail-with-body -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages/builds"
