@@ -19,8 +19,6 @@ export interface ScanStepProps<T, C extends object> extends StepApi<C> {
   noun: string;
   /** Who the reading will be filed under, shown on the result card. */
   subject?: { label: string; name: string };
-  /** The statement the clinician agrees to by confirming. */
-  consent: (item: T) => string;
   toContext: (item: T) => Partial<C>;
 }
 
@@ -244,13 +242,13 @@ export default function ScanStep<T, C extends object>(p: ScanStepProps<T, C>) {
       <div ref={captionRef} className="flex flex-col items-center text-center" style={{ marginTop: 36, minHeight: 100 }}>
         {showResult ? (
           <>
-            <p className="text-[19px] leading-snug" style={{ maxWidth: 620, textWrap: "balance" }}>{p.consent(item)}</p>
-            <div className="flex items-center" style={{ gap: 16, marginTop: 22 }}>
+            <div className="flex items-center" style={{ gap: 16 }}>
               <button onClick={retry}
                 className="gf-surface gf-dock gf-pill text-[18px] font-semibold" style={{ height: 60, padding: "0 28px", minWidth: 190 }}>
-                Not this session
+                Scan again
               </button>
               <button ref={confirmRef} onClick={confirm}
+                aria-label={p.subject ? `Confirm this ${p.getTitle(item)} session for ${p.subject.name}` : "Confirm"}
                 className="gf-surface gf-dock gf-pill gf-selected text-[18px] font-semibold" style={{ height: 60, padding: "0 28px", minWidth: 190, transform: "none" }}>
                 Confirm
               </button>

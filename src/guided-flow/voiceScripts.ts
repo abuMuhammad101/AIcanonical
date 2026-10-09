@@ -140,7 +140,7 @@ const POST_THERAPY: Record<string, VoiceScript> = {
             "Tilt slightly if there's glare on the device's screen.",
           ],
         },
-        { kind: "p", text: "Each code holds one session. Once it's read, check the device and patient on the card, then tap **Confirm**. If it's the wrong session, tap **Not this session** to scan again." },
+        { kind: "p", text: "Each code holds one session. Once it's read, check the device and patient on the card, then tap **Confirm**. If it's the wrong session, tap **Scan again**." },
       ],
       chips: [{ label: "Scan again", action: { type: "command", command: { type: "rescan" } } }, BACK],
     },

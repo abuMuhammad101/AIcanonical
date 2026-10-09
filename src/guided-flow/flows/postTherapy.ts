@@ -138,7 +138,6 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
         getDetails: s => [`SN ${s.serial}`, `${s.mode} mode · ended ${s.endedAt}`],
         noun: "device",
         subject: api.context.patient && { label: "Patient", name: api.context.patient.name },
-        consent: s => `I confirm this ${s.device} session was performed with ${api.context.patient?.name ?? "this patient"} and should be added to their record.`,
         toContext: session => ({ session }),
       }),
     },

@@ -336,6 +336,13 @@ button.gf-item:not(:disabled):hover::before {
   color: var(--gf-fg);
   transform: scale(var(--_sel-scale, 1.04));
 }
+/* Each family sets its own muted text (two classes), which would otherwise
+   outrank .gf-selected and leave descriptions white on a white card. */
+.gf-surface.gf-selected,
+.gf-item.gf-selected {
+  --gf-fg-muted: var(--gf-selected-text-muted);
+}
+
 .gf-muted {
   color: var(--gf-fg-muted);
 }
