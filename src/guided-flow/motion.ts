@@ -19,6 +19,10 @@ export const M = {
   itemIn: 0.3,
   itemRise: 8,
 
+  // Hover: cards grow gently; CSS easing (expo-like out)
+  hoverScale: 0.35,
+  hoverEase: "cubic-bezier(0.22, 1, 0.36, 1)",
+
   // Selection: white state, then hold before the step change
   select: 0.22,
   selectHold: 0.25,

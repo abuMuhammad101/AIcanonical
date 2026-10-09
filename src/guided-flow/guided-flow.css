@@ -227,7 +227,8 @@
 .gf-surface,
 .gf-item {
   /* No opacity transition here: GSAP owns opacity on glass elements. */
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease;
+  isolation: isolate; /* lets the hover veil sit between the fill and the content */
 }
 
 .gf-surface {
@@ -300,10 +301,30 @@
   color: var(--gf-fg);
 }
 
-/* Hover: a veil over whatever fill the family uses */
-button.gf-surface:not(:disabled):hover,
-button.gf-item:not(:disabled):hover {
-  background-image: linear-gradient(var(--gf-hover-veil), var(--gf-hover-veil));
+/* Hover: a veil over whatever fill the family uses. It lives on a pseudo
+   layer so it can fade (backgrounds can't transition). */
+.gf-surface:not(.absolute):not(.fixed),
+.gf-item:not(.absolute):not(.fixed) {
+  position: relative;
+}
+button.gf-surface::before,
+button.gf-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--gf-hover-veil);
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+button.gf-surface:not(:disabled):hover::before,
+button.gf-item:not(:disabled):hover::before {
+  opacity: 1;
+}
+.gf-selected::before {
+  display: none;
 }
 
 .gf-selected {

@@ -64,9 +64,13 @@ export default function ChoiceStep<C extends object>(p: ChoiceStepProps<C>) {
               style={{
                 width: 397, minHeight: 212, padding: "26px 35px", gap: 12,
                 opacity: selected && !isSel ? M.dimOpacity : 1,
-                transition: selected
-                  ? `transform ${M.select}s ease, background-color ${M.select}s ease, opacity ${M.select}s ease`
-                  : `transform ${M.select}s ease, background-color ${M.select}s ease`,
+                // Hover grow uses the CSS `scale` property, so it needs its own transition.
+                transition: [
+                  `scale ${M.hoverScale}s ${M.hoverEase}`,
+                  `transform ${M.select}s ${M.hoverEase}`,
+                  `background-color ${M.select}s ease`,
+                  ...(selected ? [`opacity ${M.select}s ease`] : []),
+                ].join(", "),
               }}
             >
               <span className="text-[24px] font-bold" style={{ lineHeight: "34px", paddingRight: 36 }}>{o.title}</span>
