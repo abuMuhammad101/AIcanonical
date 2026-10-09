@@ -6,7 +6,8 @@ import { CheckIcon, QrIcon } from "./icons";
 
 // Placeholder for the camera: a viewfinder with a sweeping scan line. When a
 // code is read the brackets close on it, then the viewfinder reshapes into a
-// card showing what was read, and the step advances on its own.
+// card showing what was read and who it's for. The clinician must confirm the
+// session belongs to that patient before the step continues.
 
 export interface ScanStepProps<T, C extends object> extends StepApi<C> {
   /** Starts reading. Calls onRead once a code is decoded; returns a cancel function. */
@@ -16,6 +17,10 @@ export interface ScanStepProps<T, C extends object> extends StepApi<C> {
   getDetails: (item: T) => string[];
   /** Singular noun for announcements, e.g. "device". */
   noun: string;
+  /** Who the reading will be filed under, shown on the result card. */
+  subject?: { label: string; name: string };
+  /** The statement the clinician agrees to by confirming. */
+  consent: (item: T) => string;
   toContext: (item: T) => Partial<C>;
 }
 
@@ -23,7 +28,7 @@ type Phase = "scanning" | "locked" | "found" | "failed";
 
 const VIEW = 300;
 const CARD_W = 460;
-const CARD_H = 230;
+const CARD_H = 300;
 const BRACKET = 54;
 
 /** A fake 21×21 code: three finder squares plus a fixed scatter of modules. */
@@ -56,6 +61,8 @@ export default function ScanStep<T, C extends object>(p: ScanStepProps<T, C>) {
   const resultRef = useRef<HTMLDivElement>(null);
   const captionRef = useRef<HTMLDivElement>(null);
   const retryRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  const confirmed = useRef(false);
   const cancel = useRef<() => void>(() => {});
   const timers = useRef<number[]>([]);
 
@@ -64,6 +71,10 @@ export default function ScanStep<T, C extends object>(p: ScanStepProps<T, C>) {
 
   const start = useCallback(() => {
     clearTimers();
+    confirmed.current = false;
+    // Back to the viewfinder (a rescan can start from the result card)
+    gsap.set(cardRef.current, { width: VIEW, height: VIEW });
+    gsap.set(captionRef.current, { opacity: 1 });
     setItem(null);
     setPhase("scanning");
     announce(`Camera open. Point it at the ${noun}'s QR code`);
@@ -112,13 +123,22 @@ export default function ScanStep<T, C extends object>(p: ScanStepProps<T, C>) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, item, rm]);
 
+  // ── Found: card content and the consent question settle in ──────────────────
   useLayoutEffect(() => {
     if (phase !== "found" || !item) return;
-    gsap.fromTo(resultRef.current?.children ?? [], rm ? { opacity: 0 } : { opacity: 0, y: M.itemRise },
+    gsap.set(captionRef.current, { opacity: 1 });
+    const els = [...(resultRef.current?.children ?? []), ...(captionRef.current?.children ?? [])];
+    gsap.fromTo(els, rm ? { opacity: 0 } : { opacity: 0, y: M.itemRise },
       { opacity: 1, y: 0, duration: M.itemIn, stagger: M.stagger, ease: M.stepInEase });
-    later(() => p.complete(p.toContext(item)), M.qrFoundHold);
+    later(() => confirmRef.current?.focus({ preventScroll: true }), M.itemIn);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, item, rm]);
+
+  function confirm() {
+    if (phase !== "found" || !item || confirmed.current) return;
+    confirmed.current = true;
+    p.complete(p.toContext(item));
+  }
 
   useLayoutEffect(() => {
     if (phase !== "failed") return;
@@ -129,18 +149,20 @@ export default function ScanStep<T, C extends object>(p: ScanStepProps<T, C>) {
   }, [phase, announce]);
 
   function retry() {
-    if (phase !== "failed") return;
+    if (phase !== "failed" && phase !== "found") return;
     start();
   }
 
-  // External "rescan" (e.g. the assistant's Try again chip)
+  // External "rescan" / "confirm" (e.g. the assistant's chips)
   const retryFn = useRef(retry);
   retryFn.current = retry;
+  const confirmFn = useRef(confirm);
+  confirmFn.current = confirm;
   useEffect(() => {
     setCommandHandler(cmd => {
-      if (cmd.type !== "rescan") return false;
-      retryFn.current();
-      return true;
+      if (cmd.type === "rescan") { retryFn.current(); return true; }
+      if (cmd.type === "confirm") { confirmFn.current(); return true; }
+      return false;
     });
     return () => setCommandHandler(null);
   }, [setCommandHandler]);
@@ -208,13 +230,33 @@ export default function ScanStep<T, C extends object>(p: ScanStepProps<T, C>) {
             {p.getDetails(item).map(line => (
               <span key={line} className="gf-muted text-[18px] tabular-nums" style={{ lineHeight: "26px" }}>{line}</span>
             ))}
+            {p.subject && (
+              <span className="flex flex-col items-center" style={{ marginTop: 10, paddingTop: 14, gap: 2, borderTop: "1px solid var(--gf-surface-border-color)", minWidth: 280 }}>
+                <span className="gf-muted text-[14px] font-semibold uppercase" style={{ letterSpacing: "0.08em" }}>{p.subject.label}</span>
+                <span className="text-[24px] font-bold leading-tight">{p.subject.name}</span>
+              </span>
+            )}
           </div>
         )}
       </div>
 
       {/* Caption */}
       <div ref={captionRef} className="flex flex-col items-center text-center" style={{ marginTop: 36, minHeight: 100 }}>
-        {failed ? (
+        {showResult ? (
+          <>
+            <p className="text-[19px] leading-snug" style={{ maxWidth: 620, textWrap: "balance" }}>{p.consent(item)}</p>
+            <div className="flex items-center" style={{ gap: 16, marginTop: 22 }}>
+              <button onClick={retry}
+                className="gf-surface gf-dock gf-pill text-[18px] font-semibold" style={{ height: 60, padding: "0 28px", minWidth: 190 }}>
+                Not this session
+              </button>
+              <button ref={confirmRef} onClick={confirm}
+                className="gf-surface gf-dock gf-pill gf-selected text-[18px] font-semibold" style={{ height: 60, padding: "0 28px", minWidth: 190, transform: "none" }}>
+                Confirm
+              </button>
+            </div>
+          </>
+        ) : failed ? (
           <>
             <p className="text-[24px] font-bold">Couldn&rsquo;t read a QR code</p>
             <p className="gf-muted text-[18px]" style={{ marginTop: 6, maxWidth: 460 }}>

@@ -51,7 +51,6 @@ export const M = {
   qrSweep: 1.7, // scan line, one pass top → bottom
   qrLock: 0.35, // brackets close on the code
   qrMorph: 0.5, // viewfinder reshapes into the device card
-  qrFoundHold: 1.6, // device card on screen before the step advances
   qrFailAfter: 7,
 
   // Review
