@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { gsap } from "gsap";
 import { M, ms } from "../motion";
 import type { StepApi } from "../flows/types";
-import { DeviceSearchIcon } from "./icons";
+import { RadarIcon } from "./icons";
 
 export interface DiscoverStepProps<T, C extends object> extends StepApi<C> {
   /** Starts a scan. Calls onFound per discovery and onDone when finished; returns a cancel function. */
@@ -138,7 +138,7 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
     gsap.fromTo(labels[n - 1], { opacity: 0 }, { opacity: 1, duration: M.itemIn, delay: M.bubbleSplit * 0.5 });
   }, [items.length, rm, announce, noun]);
 
-  // ── 4. Scan finished: Scan Again fades in ───────────────────────────────────
+  // ── 4. Scan finished: Refresh fades in ───────────────────────────────────
   useLayoutEffect(() => {
     if (phase === "empty") gsap.to(ringRefs.current, { opacity: 0, duration: 0.3, overwrite: true });
     if ((phase === "done" || phase === "empty") && scanAgainRef.current) {
@@ -146,7 +146,7 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
     }
   }, [phase]);
 
-  // ── 5. Scan Again: the sequence in reverse ──────────────────────────────────
+  // ── 5. Refresh: the sequence in reverse ──────────────────────────────────
   function scanAgain() {
     if (phase === "merging") return;
     cancelScan.current();
@@ -171,7 +171,7 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
       .to(bubbles[0], { scale: M.bubbleScanScale, duration: M.bubbleMerge, ease: "power2.inOut" }, 0.1);
   }
 
-  // External "rescan" (e.g. the assistant's Scan again chip)
+  // External "rescan" (e.g. the assistant's Refresh chip)
   const rescanRef = useRef(scanAgain);
   rescanRef.current = scanAgain;
   const phaseRef = useRef(phase);
@@ -247,15 +247,15 @@ export default function DiscoverStep<T, C extends object>(p: DiscoverStepProps<T
         })}
       </div>
 
-      {/* Below the row at Figma's offset (Scan Again centre 154px under the bubbles' centre) */}
+      {/* Below the row at Figma's offset (Refresh centre 154px under the bubbles' centre) */}
       <div className="absolute left-1/2 flex flex-col items-center" style={{ top: "calc(50% - 18px + 130px)", translate: "-50% 0" }}>
         {scanning && rm && <p className="gf-muted text-[18px]" role="status">Scanning…</p>}
         {phase === "empty" && <p className="text-[19px] mb-1">No {noun}s found</p>}
         {(phase === "done" || phase === "empty" || (phase === "merging" && items.length > 0)) && selected === null && (
-          <button ref={scanAgainRef} onClick={scanAgain}
+          <button ref={scanAgainRef} onClick={scanAgain} aria-label={`Refresh ${noun}s`}
             className="flex items-center gap-2 text-[18px] font-semibold px-4 rounded-full" style={{ minHeight: 44, opacity: 0 }}>
-            <DeviceSearchIcon size={20} />
-            Scan Again
+            <RadarIcon size={20} />
+            Refresh
           </button>
         )}
       </div>
