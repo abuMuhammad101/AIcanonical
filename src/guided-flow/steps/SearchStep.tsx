@@ -68,10 +68,15 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultsKey, term]);
 
+  // Only rows that weren't already on screen animate in, so typing doesn't
+  // make the whole list flicker.
+  const shownKeys = useRef<Set<string>>(new Set());
   useLayoutEffect(() => {
-    const els = listRef.current ? Array.from(listRef.current.children) : [];
-    if (!els.length) return;
-    gsap.fromTo(els,
+    const els = listRef.current ? Array.from(listRef.current.children) as HTMLElement[] : [];
+    const fresh = els.filter(el => !shownKeys.current.has(el.id));
+    shownKeys.current = new Set(els.map(el => el.id));
+    if (!fresh.length) return;
+    gsap.fromTo(fresh,
       rm ? { opacity: 0 } : { opacity: 0, y: M.itemRise },
       { opacity: 1, y: 0, duration: M.itemIn, stagger: M.stagger, ease: M.stepInEase });
   }, [resultsKey, rm]);
@@ -139,7 +144,10 @@ export default function SearchStep<T, C extends object>(p: SearchStepProps<T, C>
                 width: isSel ? PILL_W_SELECTED : PILL_W,
                 maxWidth: "100%",
                 height: isSel ? 110 : 104,
-                padding: "0 28px 0 19px",
+                // Avatar concentric with the pill's rounded end: equal space on the
+                // left and above, measured inside the (theme-dependent) rim.
+                paddingLeft: `calc(${isSel ? 20 : 19}px - var(--gf-item-border-width))`,
+                paddingRight: "calc(29px - var(--gf-item-border-width))",
                 gap: 17,
                 transform: "none",
                 opacity: selected && !isSel ? M.dimOpacity : 1,

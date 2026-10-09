@@ -140,8 +140,8 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     if (!mounted.current) { mounted.current = true; return; }
     const stage = stageRef.current;
     if (!stage) return;
-    const from = rm ? { opacity: 0 } : { opacity: 0, scale: M.stepScale };
-    const to = rm ? { opacity: 1 } : { opacity: 1, scale: 1 };
+    const from = rm ? { opacity: 0 } : { opacity: 0, scale: M.stepScale, y: M.stepRise };
+    const to = rm ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 };
     gsap.fromTo(stage, from, {
       ...to, duration: M.stepIn, ease: M.stepInEase,
       onComplete: () => { busyRef.current = false; },
@@ -153,7 +153,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     const stage = stageRef.current;
     if (!stage) { then(); return; }
     gsap.to(stage, {
-      opacity: 0, ...(rm ? {} : { scale: M.stepScale }),
+      opacity: 0, ...(rm ? {} : { scale: M.stepScale, y: -M.stepRise / 2 }),
       duration: M.stepOut, ease: M.stepOutEase, onComplete: then,
     });
   }, [rm]);
@@ -346,15 +346,22 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
       <div ref={dockRef}
         className="absolute left-1/2 -translate-x-1/2 flex items-center transition-opacity duration-200"
         style={{ bottom: 52, opacity: 0 }}>
-        <div style={{ opacity: focusMode ? 0.4 : 1, gap: 17 }} className="flex items-center transition-opacity duration-200">
-          {hasProgress && (
-            <button onClick={reset} aria-label="Reset guide"
-              className="gf-surface gf-dock rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
+        <div style={{ opacity: focusMode ? 0.4 : 1 }} className="flex items-center transition-opacity duration-200">
+          {/* Reset grows in from zero width so the centred group glides instead of jumping */}
+          <div aria-hidden={!hasProgress || undefined}
+            className="flex items-center"
+            style={{
+              width: hasProgress ? 60 + 17 : 0, opacity: hasProgress ? 1 : 0,
+              overflow: hasProgress ? "visible" : "hidden",
+              transition: rm ? "opacity 0.2s" : "width 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease",
+            }}>
+            <button onClick={reset} aria-label="Reset guide" tabIndex={hasProgress ? undefined : -1}
+              className="gf-surface gf-dock rounded-full flex items-center justify-center shrink-0" style={{ width: 60, height: 60, marginRight: 17 }}>
               <ResetIcon size={22} strokeWidth={1.7} />
             </button>
-          )}
+          </div>
           <button onClick={requestClose} aria-label="Close guide"
-            className="gf-surface gf-dock rounded-full flex items-center justify-center" style={{ width: 60, height: 60 }}>
+            className="gf-surface gf-dock rounded-full flex items-center justify-center" style={{ width: 60, height: 60, marginRight: voice ? 17 : 0 }}>
             <CloseIcon size={22} strokeWidth={2} />
           </button>
           {voice && (

@@ -7,19 +7,20 @@ export const M = {
   stageRise: 12,
 
   // Step change — one surface reshaping itself, never a sideways slide
-  stepOut: 0.18,
-  stepIn: 0.22,
-  stepScale: 0.96,
-  stepOutEase: "power2.in",
-  stepInEase: "power2.out",
+  stepOut: 0.2,
+  stepIn: 0.36,
+  stepScale: 0.985,
+  stepRise: 6, // the incoming step settles up from 6px below
+  stepOutEase: "power1.in",
+  stepInEase: "power3.out",
 
   // Lists and grids
   stagger: 0.05,
-  itemIn: 0.22,
+  itemIn: 0.3,
   itemRise: 8,
 
   // Selection: white state, then hold before the step change
-  select: 0.15,
+  select: 0.22,
   selectHold: 0.25,
   selectScale: 1.04,
   dimOpacity: 0.35,

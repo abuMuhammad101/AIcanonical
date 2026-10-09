@@ -2312,7 +2312,7 @@ export default function App() {
       </div>
 
       {/* Ask button — stays above the guide overlay so the assistant is always reachable */}
-      <div className="fixed transition-opacity duration-200" style={{ right: 36, bottom: 24, width: 155, height: 66, zIndex: guideOpen ? 70 : 40, opacity: guideOpen && askOpen ? 0.4 : 1 }}>
+      <div className="fixed transition-[opacity,visibility] duration-200" style={{ right: 36, bottom: 24, width: 155, height: 66, zIndex: guideOpen ? 70 : 40, opacity: guideOpen && askOpen ? 0 : 1, visibility: guideOpen && askOpen ? "hidden" : "visible" }}>
         <div aria-hidden="true" className="absolute" style={{ left: 20, top: 31, width: 114, height: 35, borderRadius: 22, filter: "blur(11.7px)", backgroundImage: "linear-gradient(162.9deg, #007A8B 0%, #3AAF4D 37%, #A8CB38 85.6%)" }} />
         <button
           className="absolute flex items-center hover:opacity-90 transition-opacity"
