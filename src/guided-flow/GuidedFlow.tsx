@@ -215,7 +215,8 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
     setEscapeHandler,
     setCommandHandler,
     reducedMotion: rm,
-  }), [context, complete, announce, setEscapeHandler, setCommandHandler, rm]);
+    isLastStep: index === steps.length - 1,
+  }), [context, complete, announce, setEscapeHandler, setCommandHandler, rm, index, steps.length]);
 
   useImperativeHandle(ref, () => ({
     sendCommand: command => commandRef.current?.(command) ?? false,

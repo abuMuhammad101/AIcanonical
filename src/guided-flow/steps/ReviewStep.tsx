@@ -3,7 +3,7 @@ import { gsap } from "gsap";
 import { Flip } from "gsap/Flip";
 import { M } from "../motion";
 import type { StepApi } from "../flows/types";
-import { ArrowUpRightIcon, LinkIcon, PencilIcon } from "./icons";
+import { ArrowRightIcon, ArrowUpRightIcon, LinkIcon, PencilIcon } from "./icons";
 import type { PickerSpec, Values } from "./pickers/shared";
 import OptionPicker from "./pickers/OptionPicker";
 import DatePicker from "./pickers/DatePicker";
@@ -264,7 +264,10 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
             className={`relative rounded-full flex items-center justify-center ${ready && editing === null ? "gf-proceed" : "gf-surface gf-dock"}`}
             style={{ width: PROCEED, height: PROCEED }}
           >
-            <ArrowUpRightIcon size={80 * SCALE} strokeWidth={0.9} />
+            {/* ↗ only where the action starts the session; → just moves to the next step */}
+            {p.isLastStep
+              ? <ArrowUpRightIcon size={80 * SCALE} strokeWidth={0.9} />
+              : <ArrowRightIcon size={80 * SCALE} strokeWidth={0.9} />}
           </button>
         </span>
       </div>

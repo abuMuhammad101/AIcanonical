@@ -22,6 +22,8 @@ export interface StepApi<C extends object> {
   /** Register how this step responds to external commands; return true if handled. */
   setCommandHandler: (handler: ((command: FlowCommand) => boolean) | null) => void;
   reducedMotion: boolean;
+  /** No step follows this one: its action finishes the guide. */
+  isLastStep: boolean;
 }
 
 export interface FlowStep<C extends object> {

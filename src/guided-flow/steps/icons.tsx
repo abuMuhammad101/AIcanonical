@@ -34,6 +34,10 @@ export const ArrowUpRightIcon = ({ size = 22, strokeWidth = 1.8 }: IconProps) =>
   <svg {...base(size, strokeWidth)}><line x1="6" y1="18" x2="18" y2="6" /><polyline points="8 6 18 6 18 16" /></svg>
 );
 
+export const ArrowRightIcon = ({ size = 22, strokeWidth = 1.8 }: IconProps) => (
+  <svg {...base(size, strokeWidth)}><line x1="4" y1="12" x2="20" y2="12" /><polyline points="13 5 20 12 13 19" /></svg>
+);
+
 export const PencilIcon = ({ size = 16, strokeWidth = 1.8 }: IconProps) => (
   <svg {...base(size, strokeWidth)}><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z" /></svg>
 );
