@@ -1,6 +1,5 @@
-# Rebuilds the prototype and republishes GitHub Pages on every push to main.
-# Pages serves the gh-pages branch; this workflow replaces its contents with
-# a fresh build each time.
+# Rebuilds the prototype and deploys it to GitHub Pages on every push to main.
+# Requires Settings → Pages → Build and deployment → Source: "GitHub Actions".
 name: Deploy to GitHub Pages
 
 on:
@@ -9,15 +8,16 @@ on:
   workflow_dispatch: # allows a manual re-run from the Actions tab
 
 permissions:
-  contents: write # to push the built site to gh-pages
-  pages: write # to request a Pages rebuild (pushes made with GITHUB_TOKEN don't trigger one)
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Check out (with LFS images)
@@ -45,18 +45,18 @@ jobs:
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
 
-      - name: Publish to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          publish_branch: gh-pages
-          force_orphan: true
-          commit_message: "Publish ${{ github.sha }}"
+          path: ./dist
 
-      - name: Request a Pages rebuild
-        run: |
-          curl --fail-with-body -sS -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/pages/builds"
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
