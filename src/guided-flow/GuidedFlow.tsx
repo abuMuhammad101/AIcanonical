@@ -424,7 +424,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
         </p>
         <div className="flex items-center" style={{ gap: 16, marginTop: 36 }}>
           <button onClick={exitConfirmed}
-            className="gf-surface gf-dock gf-pill text-[18px] font-semibold" style={{ height: 60, padding: "0 32px", minWidth: 180 }}>
+            className="gf-surface gf-secondary gf-pill text-[18px] font-semibold" style={{ height: 60, padding: "0 32px", minWidth: 180 }}>
             Exit guide
           </button>
           <button ref={continueRef} onClick={() => setShowExit(false)}

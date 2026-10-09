@@ -244,7 +244,7 @@ export default function ScanStep<T, C extends object>(p: ScanStepProps<T, C>) {
           <>
             <div className="flex items-center" style={{ gap: 16 }}>
               <button onClick={retry}
-                className="gf-surface gf-dock gf-pill text-[18px] font-semibold" style={{ height: 60, padding: "0 28px", minWidth: 190 }}>
+                className="gf-surface gf-secondary gf-pill text-[18px] font-semibold" style={{ height: 60, padding: "0 28px", minWidth: 190 }}>
                 Scan again
               </button>
               <button ref={confirmRef} onClick={confirm}

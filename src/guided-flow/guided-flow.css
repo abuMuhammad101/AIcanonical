@@ -114,6 +114,12 @@
   --gf-solid-selected-bg: var(--gf-selected-bg);
   --gf-solid-selected-border: var(--gf-selected-border-color);
   --gf-picker-blur: 0px;
+
+  /* Secondary action (beside a selected primary): the regular glass */
+  --gf-secondary-bg: var(--gf-surface-bg);
+  --gf-secondary-border: var(--gf-surface-border-width) solid var(--gf-surface-border-color);
+  --gf-secondary-text: #fff;
+  --gf-secondary-veil: var(--gf-hover-veil);
 }
 
 /* ── Light (Figma "AI-assistant-canoncial-light", 11784:15563) ───────────
@@ -207,6 +213,13 @@
   --gf-picker-blur: 5px;
   --gf-dim-paused: rgba(0, 0, 0, 0.12);
   --gf-focus-ring: 0 0 0 3px #434343;
+
+  /* Secondary action: pale glass with dark text, so it steps back from the
+     dark primary instead of looking like a faded copy of it */
+  --gf-secondary-bg: rgba(255, 255, 255, 0.72);
+  --gf-secondary-border: 1px solid rgba(67, 67, 67, 0.22);
+  --gf-secondary-text: #434343;
+  --gf-secondary-veil: rgba(67, 67, 67, 0.06);
 }
 
 /* Theme crossfade: briefly transition colour properties only (GSAP owns
@@ -252,6 +265,13 @@
   --_bg: var(--gf-dock-bg);
   --_border: var(--gf-dock-border);
   --_shadow: var(--gf-dock-shadow);
+}
+.gf-surface.gf-secondary {
+  --gf-fg: var(--gf-secondary-text);
+  --gf-hover-veil: var(--gf-secondary-veil);
+  --_bg: var(--gf-secondary-bg);
+  --_border: var(--gf-secondary-border);
+  --_shadow: none;
 }
 .gf-surface.gf-search {
   --_bg: var(--gf-search-bg);
