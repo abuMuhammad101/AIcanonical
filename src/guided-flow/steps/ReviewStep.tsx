@@ -72,7 +72,7 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
   const cols = Math.min(g.cols, fields.length);
   const rows = Math.ceil(fields.length / cols);
   const gridW = g.w * cols + g.gap * (cols - 1);
-  const NOTES_H = 150;
+  const NOTES_H = 180;
   const [values, setValues] = useState<Values>(() => p.initialValues(p.context));
   const [editing, setEditing] = useState<number | null>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -258,8 +258,8 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
                 value={values[p.notes.key] ?? ""}
                 onChange={e => { const v = e.target.value; setValues(prev => ({ ...prev, [p.notes!.key]: v })); }}
                 placeholder={p.notes.placeholder}
-                className="flex-1 resize-none bg-transparent outline-none border-none text-[19px] leading-snug"
-                style={{ color: "inherit", boxShadow: "none" }}
+                className="gf-scroll flex-1 resize-none bg-transparent outline-none border-none text-[19px] leading-snug"
+                style={{ color: "inherit", boxShadow: "none", paddingRight: 6 }}
               />
             </label>
           )}
