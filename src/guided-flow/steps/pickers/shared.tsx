@@ -11,7 +11,14 @@ export type PickerSpec =
   | { kind: "number"; key: string; min: number; max: number; unit: string; label: string; step?: number }
   | { kind: "height"; ftKey: string; inKey: string }
   | { kind: "text"; key: string; label: string; placeholder?: string; multiline?: boolean; required?: boolean }
-  | { kind: "time"; key: string; label: string };
+  | { kind: "time"; key: string; label: string }
+  /** A draggable scale with labelled ticks (skilled time, pain, Borg). */
+  | {
+    kind: "slider"; key: string; label: string; min: number; max: number; step: number; tickEvery: number;
+    /** Right-hand readout, e.g. "15 min" or "Level: Moderate". */
+    readout: (n: number) => string;
+    faces?: boolean;
+  };
 
 export interface PickerProps<S extends PickerSpec> {
   spec: S;

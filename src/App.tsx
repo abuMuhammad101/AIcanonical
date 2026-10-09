@@ -559,8 +559,9 @@ const qrSteps = [
   { title: "Scan the Device QR Code", body: "Tap Scan QR and point the iPad at the code on the device's Session Summary screen. The session data imports automatically." },
   { title: "Confirm Device Data", body: "Review the treatment records the device sent (location, intensity, run time…). Add anything the device can't measure, like patient response or muscle support." },
   { title: "Therapy Setting", body: "Choose Individual, Concurrent, Group or Co-treatment." },
-  { title: "Treatment Details", body: "Set Skilled Time (including device run time), the treatment location and any placement notes." },
-  { title: "Note Info", body: "Confirm the effective date and time, and choose the note type." },
+  { title: "Treatment Details", body: "Slide Skilled Time (including device run time), pick the treatment location and type any placement notes." },
+  { title: "Scales", body: "Optionally record the Pain Scale and Borg Scale for this session." },
+  { title: "Note Info", body: "Confirm the effective date, time and note type (Progress Note by default)." },
   { title: "Post Therapy Documentation", body: "Review the generated note, add CPT codes or a scale if needed, then Transmit to EMR or Save to Active Notes." },
 ];
 

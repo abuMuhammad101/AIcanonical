@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { NOTE_TYPES, THERAPY_SETTINGS } from "./guided-flow/data";
+import { NOTE_TYPES, SCALES, THERAPY_SETTINGS, type ScaleSpec } from "./guided-flow/data";
+import { PainFace } from "./guided-flow/steps/icons";
 import type { PostTherapyContext } from "./guided-flow/flows/postTherapy";
 
 // Post Therapy Documentation (Figma 11884:237848), opened pre-filled by the
@@ -31,6 +32,49 @@ const field = "bg-white border-2 border-[#ececec] rounded-[10px] flex items-cent
 function mmss(minutes: string) {
   const n = parseFloat(minutes) || 0;
   return `${Math.floor(n)}:${String(Math.round((n % 1) * 60)).padStart(2, "0")}`;
+}
+
+/** Pain / Borg scale row (Figma "Add Scale" options). */
+function ScaleSlider({ spec, value, onChange }: { spec: ScaleSpec; value: number; onChange: (n: number) => void }) {
+  const range = spec.max - spec.min;
+  const pct = ((value - spec.min) / range) * 100;
+  const ticks = Array.from({ length: Math.floor(range / spec.tickEvery) + 1 }, (_, i) => spec.min + i * spec.tickEvery);
+  const at = (p: number) => `calc(12px + (100% - 24px) * ${p / 100})`;
+  return (
+    <div className="flex flex-col gap-[22px] w-full">
+      <div className="flex items-baseline justify-between text-[24px]" style={{ fontFamily: SF }}>
+        <span style={{ color: "#58595c", fontWeight: 600 }}>{spec.label}</span>
+        <span style={{ color: "#8b8c8e", fontWeight: 500 }}>
+          {spec.levelLabel}: <span style={{ color: "#434343", fontWeight: 700 }}>{spec.level(value)}</span>
+        </span>
+      </div>
+      <div className="relative" style={{ height: spec.faces ? 150 : 76 }}>
+        <div className="relative h-[24px]">
+          <span className="absolute left-0 right-0 top-[9px] h-[6px] rounded-full bg-[#eaf3da]" />
+          <span className="absolute left-0 top-[9px] h-[6px] rounded-full" style={{ width: at(pct), backgroundImage: SLIDER_GRADIENT }} />
+          <span aria-hidden="true" className="absolute top-0 size-[24px] rounded-[8px] flex items-center justify-center shadow-[0px_2px_5px_0px_rgba(30,49,0,0.2)] pointer-events-none"
+            style={{ left: at(pct), marginLeft: -12, backgroundImage: "linear-gradient(135deg, #007A8B 0%, #3AAF4D 50%, #A8CB38 100%)" }}>
+            <span className="size-[9px] rounded-[2px] bg-white" />
+          </span>
+          <input type="range" min={spec.min} max={spec.max} step={1} value={value} onChange={e => onChange(parseFloat(e.target.value))}
+            aria-label={spec.label} aria-valuetext={`${spec.levelLabel}: ${spec.level(value)}`}
+            className="absolute inset-0 w-full h-[24px] opacity-0 cursor-pointer m-0" />
+        </div>
+        {ticks.map(t => (
+          <button key={t} tabIndex={-1} aria-hidden="true" onClick={() => onChange(t)}
+            className="absolute top-[38px] flex flex-col items-center gap-[6px]" style={{ left: at(((t - spec.min) / range) * 100), translate: "-50% 0" }}>
+            <span className="w-[1.5px] h-[12px] bg-[#c4c4c4]" />
+            <span className="text-[18px] tabular-nums" style={{ fontFamily: SF, color: t === value ? "#434343" : "#c4c4c4", fontWeight: t === value ? 600 : 400 }}>{t}</span>
+          </button>
+        ))}
+        {spec.faces && ([0, 1, 2, 3] as const).map(f => (
+          <span key={f} aria-hidden="true" className="absolute top-[100px]" style={{ left: at((f / 3) * 100), translate: "-50% 0", color: "#a8a9aa" }}>
+            <PainFace level={f} size={48} strokeWidth={1.3} />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 interface Props {
@@ -80,6 +124,10 @@ export default function PostTherapyScreen({ context, logo, cancelIcon, underline
   const [placement, setPlacement] = useState(context.treatment.placementNotes);
   const [clinician, setClinician] = useState(context.clinicianRecords);
   const [noteType, setNoteType] = useState(noteInfo.noteType);
+  // A scale shows once it has a value; Load Scale adds the ones that don't
+  const [pain, setPain] = useState(context.scales.pain);
+  const [borg, setBorg] = useState(context.scales.borg);
+  const hasScales = pain !== "" || borg !== "";
 
   useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
 
@@ -102,8 +150,10 @@ export default function PostTherapyScreen({ context, logo, cancelIcon, underline
     `Treatment Location: ${location || "—"} (${placement || "No additional placement notes"})`,
     ...session.records.map(r => `${r.label}: ${r.value || "N/A"}`),
     ...session.clinician.map(c => `${c.label}: ${clinician[c.id] ?? ""}`),
+    ...(pain !== "" ? [`Pain Scale: ${pain} (${SCALES.pain.level(parseFloat(pain))})`] : []),
+    ...(borg !== "" ? [`Borg Scale: ${SCALES.borg.level(parseFloat(borg))}`] : []),
     ...session.narrative,
-  ], [session, skilled, setting, location, placement, clinician]);
+  ], [session, skilled, setting, location, placement, clinician, pain, borg]);
 
   const skilledN = parseFloat(skilled) || 0;
   const pct = Math.min(100, (skilledN / SKILLED_MAX) * 100);
@@ -192,9 +242,15 @@ export default function PostTherapyScreen({ context, logo, cancelIcon, underline
                 </select>
               </label>
             </div>
-            <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tap here to enter treatment location"
-              aria-label="Treatment location"
-              className={`${field} w-full h-[80px] p-[20px] text-[20px] outline-none placeholder:text-[#212121]`} style={{ color: INK }} />
+            <label className={`${field} w-full relative h-[80px] p-[20px] gap-[12px] cursor-pointer`}>
+              <span className="flex-1 text-[20px]" style={{ color: location ? INK : MUTED }}>{location || "Select treatment location"}</span>
+              <img alt="" className="size-[18px]" src={imgArrowDown} />
+              <select aria-label="Treatment location" value={location} onChange={e => setLocation(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer">
+                {!location && <option value="">Select treatment location</option>}
+                {session.treatmentLocations.map(l => <option key={l}>{l}</option>)}
+              </select>
+            </label>
             <div className="flex flex-col gap-[10px] w-full">
               <span className="text-[20px]" style={{ color: INK, fontWeight: 600 }}>Placement Notes:</span>
               <textarea value={placement} onChange={e => setPlacement(e.target.value)} placeholder="Notes" aria-label="Placement notes"
@@ -251,11 +307,21 @@ export default function PostTherapyScreen({ context, logo, cancelIcon, underline
           </div>
 
           {/* Scale */}
-          <div className={`${card} items-end !gap-0`}>
-            <button className="flex items-center gap-[4px] px-[20px] py-[10px] text-[20px]" style={{ color: GREEN, fontWeight: 600 }}>
-              <img alt="" className="size-[24px]" src={imgAdd} /> Load Scale
-            </button>
-            <p className="w-full h-[128px] flex items-center justify-center text-[20px]" style={{ color: INK, fontWeight: 700 }}>No scale added</p>
+          <div className={`${card} items-end !gap-[12px]`}>
+            {(pain === "" || borg === "") && (
+              <button onClick={() => { if (pain === "") setPain("0"); if (borg === "") setBorg("0"); }}
+                className="flex items-center gap-[4px] px-[20px] py-[10px] text-[20px]" style={{ color: GREEN, fontWeight: 600 }}>
+                <img alt="" className="size-[24px]" src={imgAdd} /> Load Scale
+              </button>
+            )}
+            {hasScales ? (
+              <div className="w-full flex flex-col gap-[28px] px-[20px] pb-[8px]">
+                {pain !== "" && <ScaleSlider spec={SCALES.pain} value={parseFloat(pain)} onChange={n => setPain(String(n))} />}
+                {borg !== "" && <ScaleSlider spec={SCALES.borg} value={parseFloat(borg)} onChange={n => setBorg(String(n))} />}
+              </div>
+            ) : (
+              <p className="w-full h-[128px] flex items-center justify-center text-[20px]" style={{ color: INK, fontWeight: 700 }}>No scale added</p>
+            )}
           </div>
 
           {/* Note tools */}

@@ -41,14 +41,6 @@ export const PencilIcon = ({ size = 16, strokeWidth = 1.8 }: IconProps) => (
   <svg {...base(size, strokeWidth)}><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z" /></svg>
 );
 
-/** Chain link: "this value came from the connected device". */
-export const LinkIcon = ({ size = 16, strokeWidth = 1.8 }: IconProps) => (
-  <svg {...base(size, strokeWidth)}>
-    <path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1" />
-    <path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" />
-  </svg>
-);
-
 /** Rounded QR glyph for the scan step and the Quick Connect suggestion. */
 export const QrIcon = ({ size = 24, strokeWidth = 1.8 }: IconProps) => (
   <svg {...base(size, strokeWidth)}>
@@ -56,6 +48,28 @@ export const QrIcon = ({ size = 24, strokeWidth = 1.8 }: IconProps) => (
     <rect x="14.5" y="3.5" width="6" height="6" rx="1.2" />
     <rect x="3.5" y="14.5" width="6" height="6" rx="1.2" />
     <path d="M14.5 14.5h2.5v2.5M20.5 14.5v.01M14.5 20.5h.01M18 18h2.5v2.5h-3" />
+  </svg>
+);
+
+/** Pain faces for the pain scale: 0 calm → 3 distressed. */
+export const PainFace = ({ level, size = 28, strokeWidth = 1.6 }: IconProps & { level: 0 | 1 | 2 | 3 }) => (
+  <svg {...base(size, strokeWidth)}>
+    <circle cx="12" cy="12" r="10" />
+    {level === 3 ? (
+      <>
+        <polyline points="7.5 8.5 10 10 7.5 11.5" />
+        <polyline points="16.5 8.5 14 10 16.5 11.5" />
+        <path d="M7.5 16.5c1-1 2-1 3 0s2 1 3 0 2-1 3 0" />
+      </>
+    ) : (
+      <>
+        <circle cx="9" cy="9.5" r="1.2" />
+        <circle cx="15" cy="9.5" r="1.2" />
+        {level === 0 && <path d="M8 14.5a5 5 0 0 0 8 0" />}
+        {level === 1 && <line x1="8.5" y1="15.5" x2="15.5" y2="15.5" />}
+        {level === 2 && <path d="M8.5 17a4.5 4.5 0 0 1 7 0" />}
+      </>
+    )}
   </svg>
 );
 

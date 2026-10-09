@@ -438,6 +438,8 @@ export interface TherapySession {
   runMinutes: number;
   records: DeviceRecord[];
   clinician: ClinicianRecord[];
+  /** Body areas this device treats; the clinician picks the treatment location from these. */
+  treatmentLocations: string[];
   /** Device-written interventions, appended to the generated note. */
   narrative: string[];
 }
@@ -473,11 +475,10 @@ export const QR_SESSIONS: Record<string, TherapySession> = {
       { id: "abduction", label: "Post-stim abduction", value: "96°" },
       { id: "runTime", label: "Device run time", value: "15 min 0 sec" },
     ],
-    clinician: [
-      {
-        id: "response", label: "Patient response",
-        input: { kind: "options", options: ["Tolerated well", "Tolerated with rest breaks", "Reported discomfort", "Did not tolerate"] },
-      },
+    clinician: [],
+    treatmentLocations: [
+      "Right Shoulder", "Left Shoulder", "Cervical Spine", "Lumbar Spine",
+      "Right Knee", "Left Knee", "Right Hip", "Left Hip",
     ],
     narrative: [
       "Patient received premodulated electrical stimulation to the Right Shoulder over 2 channels.",
@@ -505,6 +506,7 @@ export const QR_SESSIONS: Record<string, TherapySession> = {
     clinician: [
       { id: "muscleSupport", label: "Muscle support", input: { kind: "text", placeholder: "e.g. Min assist, bilateral LE" } },
     ],
+    treatmentLocations: ["Lower Extremity", "Upper Extremity", "Upper & Lower Extremity"],
     narrative: [
       "Patient engaged in active/resistive cycle ergometry to the Lower Extremity.",
       "The patient was monitored during the therapy session and cycle parameters were adjusted based on the patient's response to the exercise. Two interventions occurred as follows:",
@@ -513,3 +515,29 @@ export const QR_SESSIONS: Record<string, TherapySession> = {
     ],
   },
 };
+
+// ─── Scales (Post Therapy Documentation → Add Scale) ─────────────────────────
+
+export interface ScaleSpec {
+  label: string;
+  min: number;
+  max: number;
+  /** A labelled tick every this many units. */
+  tickEvery: number;
+  /** Text after "Level:" for a value, e.g. "Moderate". */
+  level: (n: number) => string;
+  levelLabel: string;
+  /** Pain faces under the ticks, evenly spaced from min to max. */
+  faces?: boolean;
+}
+
+export const SCALES = {
+  pain: {
+    label: "Pain Scale", min: 0, max: 60, tickEvery: 5, faces: true, levelLabel: "Level",
+    level: n => (n === 0 ? "None" : n < 15 ? "Mild" : n < 35 ? "Moderate" : n < 55 ? "Severe" : "Extreme"),
+  },
+  borg: {
+    label: "Borg Scale", min: 0, max: 10, tickEvery: 1, levelLabel: "Recorded Level",
+    level: n => String(n).padStart(2, "0"),
+  },
+} satisfies Record<string, ScaleSpec>;

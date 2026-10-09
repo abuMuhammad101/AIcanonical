@@ -193,12 +193,30 @@ const POST_THERAPY: Record<string, VoiceScript> = {
     },
   },
 
+  scales: {
+    transcript: "Do I have to fill in both scales?",
+    matches: /\b(scale|pain|borg|both|skip|exertion)\b/i,
+    reply: {
+      blocks: [
+        { kind: "p", text: "No, both are optional. Record the ones you measured this session." },
+        {
+          kind: "ul",
+          items: [
+            "**Pain Scale:** the patient's pain after treatment, 0–60. The level (Mild, Moderate…) is filled in for you.",
+            "**Borg Scale:** perceived exertion, 0–10. Most useful after active sessions like cycling.",
+          ],
+        },
+      ],
+      chips: [{ label: "Set pain scale", action: { type: "command", command: { type: "edit", value: "pain" } } }, BACK],
+    },
+  },
+
   note: {
     transcript: "Which note type should I pick?",
     matches: /\b(note|type|progress|daily|date|time|effective)\b/i,
     reply: {
       blocks: [
-        { kind: "p", text: "Use **Daily Note** for a routine session. Choose **Progress Note** if one is due (at least every 10 treatment days), since it adds the progress summary the payer expects." },
+        { kind: "p", text: "It starts on **Progress Note**. Switch to **Daily Note** for a routine session when no progress note is due (one is needed at least every 10 treatment days)." },
         { kind: "p", text: "Effective date and time default to now. Change them if you're documenting a session from earlier today." },
       ],
       chips: [{ label: "Choose note type", action: { type: "command", command: { type: "edit", value: "noteType" } } }, BACK],

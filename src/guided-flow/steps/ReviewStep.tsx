@@ -3,7 +3,7 @@ import { gsap } from "gsap";
 import { Flip } from "gsap/Flip";
 import { M } from "../motion";
 import type { StepApi } from "../flows/types";
-import { ArrowRightIcon, ArrowUpRightIcon, LinkIcon, PencilIcon } from "./icons";
+import { ArrowRightIcon, ArrowUpRightIcon, PencilIcon } from "./icons";
 import type { PickerSpec, Values } from "./pickers/shared";
 import OptionPicker from "./pickers/OptionPicker";
 import DatePicker from "./pickers/DatePicker";
@@ -11,6 +11,7 @@ import NumberPicker from "./pickers/NumberPicker";
 import HeightPicker from "./pickers/HeightPicker";
 import TextPicker from "./pickers/TextPicker";
 import TimePicker from "./pickers/TimePicker";
+import SliderPicker from "./pickers/SliderPicker";
 
 export interface ReviewField {
   id: string;
@@ -29,7 +30,12 @@ export interface ReviewStepProps<C extends object> extends StepApi<C> {
   proceedLabel: string;
   /** "compact" fits a 4 × 3 grid, for long read-outs like device records. */
   density?: "regular" | "compact";
+  /** A free-text box under the tiles, typed into directly (no picker). */
+  notes?: { key: string; label: string; placeholder: string };
 }
+
+/** What an empty tile asks for. */
+const emptyLabel = (spec?: PickerSpec) => (spec?.kind === "text" ? "Type" : spec?.kind === "slider" ? "Set" : "Select");
 
 const GRID = {
   regular: { cols: 3, w: 220, h: 146, gap: 20, pad: "12px 28px", value: 24, label: 18 },
@@ -56,13 +62,17 @@ function Picker({ field, values, onConfirm, flipId }: { field: ReviewField; valu
     case "height": return <HeightPicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
     case "text": return <TextPicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
     case "time": return <TimePicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
+    case "slider": return <SliderPicker spec={spec} values={values} onConfirm={onConfirm} flipId={flipId} />;
   }
 }
 
 export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
   const { fields, reducedMotion: rm, setFocusMode, setEscapeHandler, setCommandHandler, announce } = p;
   const g = GRID[p.density ?? "regular"];
-  const rows = Math.ceil(fields.length / g.cols);
+  const cols = Math.min(g.cols, fields.length);
+  const rows = Math.ceil(fields.length / cols);
+  const gridW = g.w * cols + g.gap * (cols - 1);
+  const NOTES_H = 150;
   const [values, setValues] = useState<Values>(() => p.initialValues(p.context));
   const [editing, setEditing] = useState<number | null>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -199,13 +209,15 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
   return (
     <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: 120, paddingBottom: 120 }}>
       {/* Surface keeps the grid's footprint so pickers grow from where the tiles were */}
-      <div ref={surfaceRef} className="flex justify-center items-start" style={{ minHeight: g.h * rows + g.gap * (rows - 1) }}>
+      <div ref={surfaceRef} className="flex justify-center items-start"
+        style={{ minHeight: g.h * rows + g.gap * (rows - 1) + (p.notes ? g.gap + NOTES_H : 0) }}>
         {field === null ? (
-          <div className="grid" style={{ gridTemplateColumns: `repeat(${g.cols}, ${g.w}px)`, gap: g.gap }}>
+          <div className="flex flex-col" style={{ gap: g.gap }}>
+          <div className="grid" style={{ gridTemplateColumns: `repeat(${cols}, ${g.w}px)`, gap: g.gap }}>
             {fields.map((f, i) => {
               const v = f.display(values);
               if (!f.picker) return (
-                // Read-only: no hover, no pencil; the link glyph marks it as device data
+                // Read-only: no hover, no pencil
                 <div
                   key={f.id}
                   data-flip-id={`slot-${i}`}
@@ -214,7 +226,6 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
                   className="gf-surface gf-tile gf-card relative flex flex-col justify-center items-start text-left"
                   style={{ width: g.w, height: g.h, padding: g.pad, gap: 8 }}
                 >
-                  <span className="absolute gf-muted" style={{ top: 10, right: 12 }}><LinkIcon size={16} strokeWidth={1.6} /></span>
                   <span className={`font-bold leading-tight line-clamp-2 break-words tabular-nums ${v ? "" : "gf-muted"}`} style={{ fontSize: g.value }}>{v || "N/A"}</span>
                   <span className="gf-muted leading-snug line-clamp-2" style={{ fontSize: g.label }}>{f.label}</span>
                 </div>
@@ -232,12 +243,26 @@ export default function ReviewStep<C extends object>(p: ReviewStepProps<C>) {
                   {v ? (
                     <span className="font-bold leading-tight line-clamp-2 break-words" style={{ fontSize: g.value }}>{v}</span>
                   ) : (
-                    <span className="font-bold leading-tight gf-muted" style={{ fontSize: g.value }}>Add</span>
+                    <span className="font-bold leading-tight gf-muted" style={{ fontSize: g.value }}>{emptyLabel(f.picker)}</span>
                   )}
                   <span className="gf-muted leading-snug line-clamp-2" style={{ fontSize: g.label }}>{f.label}</span>
                 </button>
               );
             })}
+          </div>
+          {p.notes && (
+            <label data-flip-id="notes" className="gf-surface gf-tile gf-card flex flex-col"
+              style={{ width: gridW, height: NOTES_H, padding: "14px 22px", gap: 6 }}>
+              <span className="gf-muted text-[16px]">{p.notes.label}</span>
+              <textarea
+                value={values[p.notes.key] ?? ""}
+                onChange={e => { const v = e.target.value; setValues(prev => ({ ...prev, [p.notes!.key]: v })); }}
+                placeholder={p.notes.placeholder}
+                className="flex-1 resize-none bg-transparent outline-none border-none text-[19px] leading-snug"
+                style={{ color: "inherit", boxShadow: "none" }}
+              />
+            </label>
+          )}
           </div>
         ) : (
           <Picker field={field} values={values} onConfirm={patch => close(patch)} flipId={`slot-${editing}`} />

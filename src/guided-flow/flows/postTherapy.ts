@@ -1,7 +1,7 @@
 import { createElement as h } from "react";
 import type { FlowConfig } from "./types";
 import {
-  NOTE_TYPES, QR_SESSIONS, THERAPY_SETTINGS,
+  NOTE_TYPES, QR_SESSIONS, SCALES, THERAPY_SETTINGS,
   type Patient, type TherapySession, type TherapySetting,
 } from "../data";
 import { patientStep } from "./shared";
@@ -27,6 +27,12 @@ export interface NoteInfo {
   noteType: string;
 }
 
+/** Scale values as strings; "" means the scale wasn't recorded. */
+export interface ScaleValues {
+  pain: string;
+  borg: string;
+}
+
 export interface PostTherapyContext {
   patient?: Patient;
   session?: TherapySession;
@@ -34,6 +40,7 @@ export interface PostTherapyContext {
   clinicianRecords?: Values;
   setting?: TherapySetting;
   treatment?: TreatmentDetails;
+  scales?: ScaleValues;
   noteInfo?: NoteInfo;
 }
 
@@ -62,23 +69,34 @@ function recordFields(s: TherapySession): ReviewField[] {
   return [...device, ...clinician];
 }
 
-const TREATMENT_FIELDS: ReviewField[] = [
+const treatmentFields = (s: TherapySession): ReviewField[] => [
   {
     id: "skilled", label: "Skilled time", required: true,
     display: v => (v.skilledMinutes ? `${v.skilledMinutes} min` : ""),
-    picker: { kind: "number", key: "skilledMinutes", min: 1, max: 120, step: 0.5, unit: "min", label: "Skilled time" },
+    picker: {
+      kind: "slider", key: "skilledMinutes", label: "Skilled time", min: 0, max: 60, step: 0.5, tickEvery: 5,
+      readout: n => `${n} min`,
+    },
   },
   {
     id: "location", label: "Treatment location", required: true,
     display: v => v.location,
-    picker: { kind: "text", key: "location", label: "Treatment location", placeholder: "e.g. Therapy gym", required: true },
-  },
-  {
-    id: "placement", label: "Placement notes",
-    display: v => v.placementNotes,
-    picker: { kind: "text", key: "placementNotes", label: "Placement notes", placeholder: "Pad or strap placement, skin check…", multiline: true },
+    picker: { kind: "options", key: "location", options: s.treatmentLocations, layout: "list" },
   },
 ];
+
+const scaleField = (key: keyof typeof SCALES): ReviewField => {
+  const sc = SCALES[key];
+  return {
+    id: key, label: sc.label,
+    // Pain reads "22 · Moderate"; Borg's level is the number itself ("01")
+    display: v => (!v[key] ? "" : key === "pain" ? `${v[key]} · ${sc.level(parseFloat(v[key]))}` : sc.level(parseFloat(v[key]))),
+    picker: {
+      kind: "slider", key, label: sc.label, min: sc.min, max: sc.max, step: 1, tickEvery: sc.tickEvery,
+      faces: "faces" in sc && sc.faces, readout: n => `${sc.levelLabel}: ${sc.level(n)}`,
+    },
+  };
+};
 
 const NOTE_FIELDS: ReviewField[] = [
   {
@@ -155,9 +173,31 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
       provides: ["treatment"],
       render: api => h(ReviewStep<PostTherapyContext>, {
         ...api,
-        fields: TREATMENT_FIELDS,
-        initialValues: ctx => ({ skilledMinutes: String(ctx.session?.runMinutes ?? ""), location: "", placementNotes: "" }),
-        toContext: v => ({ treatment: { skilledMinutes: v.skilledMinutes, location: v.location, placementNotes: v.placementNotes } }),
+        fields: treatmentFields(api.context.session!),
+        notes: { key: "placementNotes", label: "Placement notes", placeholder: "Type pad or strap placement, skin check…" },
+        initialValues: ctx => {
+          // Start from where the device says it was used, when that's one of the options
+          const deviceLoc = ctx.session?.records.find(r => r.id === "location")?.value ?? "";
+          return {
+            skilledMinutes: String(ctx.session?.runMinutes ?? ""),
+            location: ctx.session?.treatmentLocations.includes(deviceLoc) ? deviceLoc : "",
+            placementNotes: "",
+          };
+        },
+        toContext: v => ({ treatment: { skilledMinutes: v.skilledMinutes, location: v.location, placementNotes: (v.placementNotes ?? "").trim() } }),
+        proceedLabel: "Continue",
+      }),
+    },
+    {
+      id: "scales",
+      label: "Scales",
+      prompt: "record the pain and Borg scales",
+      provides: ["scales"],
+      render: api => h(ReviewStep<PostTherapyContext>, {
+        ...api,
+        fields: [scaleField("pain"), scaleField("borg")],
+        initialValues: () => ({ pain: "", borg: "" }),
+        toContext: v => ({ scales: { pain: v.pain, borg: v.borg } }),
         proceedLabel: "Continue",
       }),
     },
@@ -169,7 +209,7 @@ export const postTherapyFlow: FlowConfig<PostTherapyContext> = {
       render: api => h(ReviewStep<PostTherapyContext>, {
         ...api,
         fields: NOTE_FIELDS,
-        initialValues: () => ({ date: today(), time: formatTime(new Date()), noteType: "" }),
+        initialValues: () => ({ date: today(), time: formatTime(new Date()), noteType: "Progress Note" }),
         toContext: v => ({ noteInfo: { date: v.date, time: v.time, noteType: v.noteType } }),
         proceedLabel: "Open documentation",
       }),
