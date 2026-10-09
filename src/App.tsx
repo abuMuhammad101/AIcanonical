@@ -643,6 +643,7 @@ function AskPanel({ onClose, onStartGuide, slideOut = false, guide }: AskPanelPr
   }
 
   const suggestions = [
+    "How do I perform ARA Assessment?",
     "How do I log in to ACPlus for the first time?",
     "I'm not sure which login option I should use.",
     "My facility uses Microsoft can I log in with my Microsoft account?",
