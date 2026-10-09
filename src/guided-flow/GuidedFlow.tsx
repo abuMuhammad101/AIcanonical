@@ -31,6 +31,11 @@ export interface GuideVoice {
   scriptFor: (stepId: string) => string;
   /** The transcript was sent; the host opens its assistant chat. */
   onSend: (transcript: string, stepId: string) => void;
+  /**
+   * Float the Speak button at this viewport position (e.g. beside the host's
+   * assistant button) instead of in the dock. The pill grows away from `right`.
+   */
+  anchor?: { right: number; bottom: number };
 }
 
 interface Props<C extends object> {
@@ -86,6 +91,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   const scrimRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
+  const micRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
 
@@ -118,17 +124,18 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
   // ── Overlay in ──────────────────────────────────────────────────────────────
   useLayoutEffect(() => {
     const scrim = scrimRef.current, stage = stageRef.current, dock = dockRef.current;
+    const chrome = [dock, micRef.current].filter(Boolean) as HTMLElement[];
     if (!scrim || !stage || !dock) return;
     const full = hostBlur();
     if (rm) {
       blur.current.px = full;
       applyBlur();
-      gsap.fromTo([scrim, stage, dock], { opacity: 0 }, { opacity: 1, duration: M.overlayIn });
+      gsap.fromTo([scrim, stage, ...chrome], { opacity: 0 }, { opacity: 1, duration: M.overlayIn });
     } else {
       const tl = gsap.timeline({ defaults: { duration: M.overlayIn, ease: M.overlayEase } });
       tl.fromTo(scrim, { opacity: 0 }, { opacity: 1 }, 0)
         .fromTo(blur.current, { px: 0 }, { px: full, onUpdate: applyBlur }, 0)
-        .fromTo([stage, dock], { opacity: 0, y: M.stageRise }, { opacity: 1, y: 0 }, 0.05);
+        .fromTo([stage, ...chrome], { opacity: 0, y: M.stageRise }, { opacity: 1, y: 0 }, 0.05);
     }
     focusFirst();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,7 +174,7 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
 
   // ── Leaving the overlay ─────────────────────────────────────────────────────
   const fadeOut = useCallback((then: () => void) => {
-    const targets = [stageRef.current, dockRef.current].filter(Boolean);
+    const targets = [stageRef.current, dockRef.current, micRef.current].filter(Boolean);
     const tl = gsap.timeline({ onComplete: then, defaults: { duration: M.overlayOut, ease: "power2.inOut" } });
     tl.to(targets, { opacity: 0, duration: M.stepOut }, 0)
       .to(scrimRef.current, { opacity: 0 }, 0);
@@ -361,15 +368,26 @@ export default function GuidedFlow<C extends object>({ flow, initialContext, onC
             </button>
           </div>
           <button onClick={requestClose} aria-label="Close guide"
-            className="gf-surface gf-dock rounded-full flex items-center justify-center" style={{ width: 60, height: 60, marginRight: voice ? 17 : 0 }}>
+            className="gf-surface gf-dock rounded-full flex items-center justify-center" style={{ width: 60, height: 60, marginRight: voice && !voice.anchor ? 17 : 0 }}>
             <CloseIcon size={22} strokeWidth={2} />
           </button>
-          {voice && (
+          {voice && !voice.anchor && (
             <MicButton listening={speak.listening} level={speak.level} shakeKey={speak.shakeKey}
               label={speak.label} onToggle={speak.toggle} reducedMotion={rm} />
           )}
         </div>
       </div>
+
+      {/* Speak, floated beside the host's assistant button */}
+      {voice?.anchor && (
+        <div ref={micRef} className="absolute flex justify-end transition-opacity duration-200"
+          style={{ right: voice.anchor.right, bottom: voice.anchor.bottom, opacity: 0 }}>
+          <div style={{ opacity: focusMode ? 0.4 : 1 }} className="flex transition-opacity duration-200">
+            <MicButton listening={speak.listening} level={speak.level} shakeKey={speak.shakeKey}
+              label={speak.label} onToggle={speak.toggle} reducedMotion={rm} />
+          </div>
+        </div>
+      )}
 
       {/* Paused under host UI (assistant chat) */}
       <div className="absolute inset-0 pointer-events-none transition-opacity duration-200"

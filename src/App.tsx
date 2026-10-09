@@ -2338,7 +2338,12 @@ export default function App() {
           onStart={handleGuideStart}
           paused={askOpen}
           onStepChange={setGuideStep}
-          voice={{ scriptFor: scriptedTranscript, onSend: handleVoiceSend }}
+          voice={{
+            scriptFor: scriptedTranscript,
+            onSend: handleVoiceSend,
+            // Beside Ask! (pill spans 36+4 … 36+150 from the right edge, 26px up): 16px gap, same centre line
+            anchor: { right: 36 + 150 + 16, bottom: 24 + 2 },
+          }}
         />
       )}
 
